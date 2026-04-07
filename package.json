@@ -1,0 +1,22 @@
+{
+  "name": "ponskan-api",
+  "version": "1.0.0",
+  "description": "API do projeto integrador em Node.js + Express.js",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guilhermexmada/ponskan-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/guilhermexmada/ponskan-api/issues"
+  },
+  "homepage": "https://github.com/guilhermexmada/ponskan-api#readme"
+}
