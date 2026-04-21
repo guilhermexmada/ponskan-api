@@ -40,4 +40,4 @@ const Imagem = connection.define('imagens', {
     }
 )
 
-export default Usuario
+export default Imagem
