@@ -1,9 +1,13 @@
 import app from './app.js'
+import { initDatabase } from './src/database/initDB.js'
 
 const port = process.env.PORT || 4040
 
 async function startServer() {
     try {
+
+        await initDatabase() // inicia banco de dados
+
         // inicia servidor 
         const server = app.listen(port, () => {
             console.log(`>> Aplicação iniciada ... Servidor rodando em http://localhost:${port}`)

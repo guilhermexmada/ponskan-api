@@ -1,0 +1,22 @@
+import connection from '../config/sequelize-config.js'
+import { DataTypes } from 'sequelize'
+
+const Analise = connection.define('analises', {
+    id: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        defaultValue: DataTypes.UUIDV4
+    },
+    status: {
+        type: DataTypes.ENUM('finalizada', 'pendente', 'cancelada'),
+        defaultValue: 'pendente',
+        allowNull: false
+    },
+},
+    {
+        tableName: 'analises',
+        timestamps: true
+    }
+)
+
+export default Analise
