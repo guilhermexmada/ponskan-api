@@ -1,4 +1,3 @@
-import { classToInvokable } from 'sequelize/lib/utils'
 import connection from '../config/sequelize-config.js'
 import { DataTypes } from 'sequelize'
 
