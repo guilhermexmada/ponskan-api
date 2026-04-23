@@ -1,5 +1,6 @@
 import app from './app.js'
 import { initDatabase } from './src/database/initDB.js'
+import { initStorage } from './src/utils/storage/init.js'
 
 const port = process.env.PORT || 4040
 
@@ -7,6 +8,8 @@ async function startServer() {
     try {
 
         await initDatabase() // inicia banco de dados
+
+        await initStorage() // inicia storage
 
         // inicia servidor 
         const server = app.listen(port, () => {
