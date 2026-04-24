@@ -1,6 +1,7 @@
 import express from 'express'
 import dotenv from 'dotenv'
 import healthRoutes from './src/routes/healthRoutes.js'
+import errorMiddleware from './src/middlewares/errorMiddleware.js'
 
 dotenv.config()
 const app = express()
@@ -15,5 +16,8 @@ app.get('/', (req, res) => {
     res.send('Hello, world!')
 })
 app.use('/', healthRoutes)
+
+// define middleware como última camada de tratamento de erros
+app.use(errorMiddleware)
 
 export default app

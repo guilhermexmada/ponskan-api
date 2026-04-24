@@ -1,16 +1,17 @@
 import healthService from "../services/healthService.js"
+import APIResponse from "../utils/apiResponse.js"
+import AppError from "../utils/appError.js"
 
 class HealthController {
-    async healthCheck(req, res) {
+    async healthCheck(req, res, next) {
         try {
             const result = await healthService.test()
             if (!result) {
-                res.status(503).json({ success: false, message: 'Serviço indisponível' })
+                throw new AppError('Serviço indisponível', 503)
             }
-            res.status(200).json({ success: true, message: 'Serviço disponível', data: result })
+            return new APIResponse(res, 'Serviço disponível', 200, result)
         } catch (error) {
-            console.error('Erro ao testar saúde da API: ', error)
-            res.status(500).json({ success: false, message: 'Erro ao testar saúde da API', error: error })
+            next(error)
         }
     }
 }
