@@ -21,7 +21,7 @@ const Usuario = connection.define('usuarios', {
         allowNull: false,
     },
     telefone: {
-        type: DataTypes.INTEGER
+        type: DataTypes.STRING,
     },
     data_nascimento: {
         type: DataTypes.DATE
