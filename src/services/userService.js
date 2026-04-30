@@ -5,11 +5,11 @@ import AppError from '../utils/appError.js'
 class UserService {
     async create(data) {
         if (!data) {
-            throw new AppError('Erro ao enviar dados do usuário', 401)
+            throw new AppError('Erro ao enviar dados do usuário', 400)
         }
         // verifica se usuário já existe
-        const findUser = await this.findByEmail(data.email)
-        if (findUser == false) {
+        const exists = await this.existsByEmail(data.email)
+        if (exists == false) {
             const user = await Usuario.create(data)
             return {
                 id: user.id,
@@ -22,7 +22,7 @@ class UserService {
     }
     async getOne(id) {
         if (!id) {
-            throw new AppError('Erro ao enviar identificador do usuário', 401)
+            throw new AppError('Erro ao enviar identificador do usuário', 400)
         }
         const user = await Usuario.findByPk(id)
         if (!user) {
@@ -31,9 +31,9 @@ class UserService {
             return user
         }
     }
-    async findByEmail(email) {
+    async existsByEmail(email) {
         if (!email) {
-            throw new AppError('Erro ao enviar e-mail do usuário', 401)
+            throw new AppError('Erro ao enviar e-mail do usuário', 400)
         }
         const user = await Usuario.findOne(
             {
@@ -41,6 +41,21 @@ class UserService {
             }
         )
         return !!user // transforma em booleano (existe = true, não existe = false)
+    }
+    async findByEmail(email) {
+        if (!email) {
+            throw new AppError('Erro ao enviar e-mail do usuário', 400)
+        }
+        const user = await Usuario.findOne(
+            {
+                where: { email: email }
+            }
+        )
+        return {
+            id: user.id,
+            email: user.email,
+            password: user.senha,
+        }
     }
 }
 

@@ -10,7 +10,7 @@ class UserController {
             const { name, email, password, phone, birthDate, accessType, address, cnpj, highSchool, course } = req.body
 
             if (!name || !email || !password) {
-                throw new AppError('Campos obrigatórios não preenchidos', 401)
+                throw new AppError('Campos obrigatórios não preenchidos', 400)
             }
 
             // hasheia senha
@@ -51,14 +51,14 @@ class UserController {
         try {
             const id = req.params.id
             if (!id) {
-                throw new AppError('ID do usuário não informado', 401)
+                throw new AppError('ID do usuário não informado', 400)
             }
             // valida formato da ID
             if (validator.isUUID(id)) {
                 const result = await UserService.getOne(id)
                 return new APIResponse(res, 'Usuário encontrado com sucesso', 200, result)
             } else {
-                throw new AppError('ID do usuário é inválido', 401)
+                throw new AppError('ID do usuário é inválido', 400)
             }
         } catch (error) {
             next(error)
