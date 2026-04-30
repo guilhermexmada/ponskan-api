@@ -51,6 +51,9 @@ class UserService {
                 where: { email: email }
             }
         )
+        if(!user){
+            throw new AppError('Usuário não encontrado', 404)
+        }
         return {
             id: user.id,
             email: user.email,
