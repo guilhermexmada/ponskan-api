@@ -7,6 +7,14 @@ const Analise = connection.define('analises', {
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4
     },
+    id_usuario: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+            model: 'usuarios',
+            key: 'id'
+        }
+    },
     status: {
         type: DataTypes.ENUM('finalizada', 'pendente', 'cancelada'),
         defaultValue: 'pendente',

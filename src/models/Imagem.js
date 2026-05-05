@@ -7,6 +7,14 @@ const Imagem = connection.define('imagens', {
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4
     },
+    id_analise: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+            model: 'analises',
+            key: 'id'
+        }
+    },
     nome: {
         type: DataTypes.STRING,
         allowNull: false
