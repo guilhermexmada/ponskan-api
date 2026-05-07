@@ -13,8 +13,8 @@ class AnalysisService {
             analysisId: analysis.id,
             files: files.map(f => ({
                 buffer: f.buffer,
-                originalName: f.originalName,
-                mimeType: f.mimeType
+                originalName: f.originalname,
+                mimeType: f.mimetype
             }))
         }
 
