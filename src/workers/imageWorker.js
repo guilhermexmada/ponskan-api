@@ -1,45 +1,50 @@
 import { Worker } from 'bullmq'
 import { redisConfig } from '../config/redis-config.js'
-import sharp from 'sharp'
+import sharpPipeline from '../pipelines/sharpPipeline.js'
+import storageService from '../utils/storage/storageService.js'
+import { v4 as uuidv4 } from 'uuid'
+
 
 const imageWorker = new Worker('image-processing', async (job) => {
     const { analysisId, files } = job.data
-    console.log('Processando análise ', analysisId)
+    console.log(`>> Processando Análise ${analysisId}`)
 
-    for (const file of files) {
-        try {
-            // convertendo buffer serializado p/ buffer real
+    try {
+        let analysisObject = []
+        for (const file of files) {
+            // envia buffer serializado para pipeline
             const buffer = Buffer.from(file.buffer.data)
-            // pré-processamento com sharp
-            const optimizedBuffer = await sharp(buffer)
-                // redimensionamento
-                .resize(224, 224, {
-                    fit: 'cover',
-                    position: 'center'
-                })
-                // redução de ruído (denoising) com leve desfoque gaussiano
-                .blur(0.5)
-                // ajuste de contraste e brilho
-                .modulate({
-                    brightness: 1.05,
-                    saturation: 1.2
-                })
-                // conversão de cores e formato
-                .toColorspace('srgb')
-                .png({ quality: 90, compressionLevel: 9 })
-                // output
-                .toBuffer()
+            const processedBuffer = await sharpPipeline.preProcess(buffer)
 
-            console.log(`Imagem ${file.originalName} otimizada com sucesso`)
-        } catch (error) {
-            console.error('>> Erro no Sharp: falha ao processar ', file.originalName)
+            // salva temporariamente buffer processado 
+            const tempPath = await storageService.save(
+                processedBuffer,
+                `temp/${analysisId}`,
+                `${uuidv4()}.webp`
+            )
+
+            console.log(`>> ${file.originalName} otimizada com sucesso`)
+
+            analysisObject.push({
+                buffer: processedBuffer,
+                metadata: {
+                    path: tempPath,
+                    resolution: [224, 224],
+                    colorspace: 'sRGB',
+                    timestamp: Date.now()
+                }
+            })
         }
+
+        console.log(analysisObject)
+    } catch (error) {
+        console.error(`>> Erro ao processar job ${job.id} : ${error.message}`)
     }
 }, { connection: redisConfig })
 
-imageWorker.on('ready', () => console.log('Worker conectado ao Redis e pronto!'));
-imageWorker.on('active', (job) => console.log(`Job ${job.id} iniciou processamento`));
-imageWorker.on('completed', (job) => console.log(`Job ${job.id} finalizado com sucesso`));
-imageWorker.on('failed', (job, err) => console.error(`Job ${job.id} falhou: ${err.message}`));
+// imageWorker.on('ready', () => console.log('Worker conectado ao Redis e pronto!'));
+// imageWorker.on('active', (job) => console.log(`Job ${job.id} iniciou processamento`));
+// imageWorker.on('completed', (job) => console.log(`Job ${job.id} finalizado com sucesso`));
+// imageWorker.on('failed', (job, err) => console.error(`Job ${job.id} falhou: ${err.message}`));
 
 export default imageWorker
