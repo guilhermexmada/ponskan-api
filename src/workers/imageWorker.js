@@ -2,13 +2,13 @@ import { Worker } from 'bullmq'
 import { redisConfig } from '../config/redis-config.js'
 import sharpPipeline from '../pipelines/sharpPipeline.js'
 import storageService from '../utils/storage/storageService.js'
+import cnnService from '../services/cnnService.js'
 import { v4 as uuidv4 } from 'uuid'
 
 
 const imageWorker = new Worker('image-processing', async (job) => {
     const { analysisId, files } = job.data
     console.log(`>> Processando Análise ${analysisId}`)
-
     try {
         let analysisObject = []
         for (const file of files) {
@@ -23,20 +23,30 @@ const imageWorker = new Worker('image-processing', async (job) => {
                 `${uuidv4()}.webp`
             )
 
+            // salva temporariamente buffer original
+            const originalTempPath = await storageService.save(
+                buffer,
+                `temp/${analysisId}`,
+                `${uuidv4()}.webp`
+            )
+
             console.log(`>> ${file.originalName} otimizada com sucesso`)
 
             analysisObject.push({
                 buffer: processedBuffer,
                 metadata: {
                     path: tempPath,
+                    originalPath: originalTempPath,
                     resolution: [224, 224],
                     colorspace: 'sRGB',
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
                 }
             })
         }
 
-        console.log(analysisObject)
+        const simulate = await cnnService.simulate(analysisId, analysisObject)
+
+        console.log(simulate)
     } catch (error) {
         console.error(`>> Erro ao processar job ${job.id} : ${error.message}`)
     }
