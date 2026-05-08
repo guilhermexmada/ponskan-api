@@ -5,7 +5,7 @@ export async function initStorage(){
     // define a raiz do diretório p/ criar a storage
     const storagePath = path.resolve('storage')
     // inclui subpastas da storage usando .map()
-    const folders = ['uploads','processed'].map(subFolder => path.join(storagePath, subFolder))
+    const folders = ['uploads','processed','temp'].map(subFolder => path.join(storagePath, subFolder))
 
     try {
         // cria pastas de forma paralela (promise) e recursiva (verifica se elas já existem)
