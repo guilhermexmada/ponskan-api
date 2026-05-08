@@ -35,7 +35,7 @@ const Usuario = connection.define('usuarios', {
         type: DataTypes.STRING
     },
     cnpj: {
-        type: DataTypes.INTEGER
+        type: DataTypes.STRING
     },
     faculdade: {
         type: DataTypes.STRING
