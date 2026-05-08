@@ -7,6 +7,14 @@ const Processada = connection.define('processadas', {
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4
     },
+    id_imagem: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+            model: 'imagens',
+            key: 'id'
+        }
+    },
     nome: {
         type: DataTypes.STRING,
         allowNull: false

@@ -3,6 +3,7 @@ import cors from 'cors'
 import corsOptions from './src/config/cors-config.js'
 import healthRoutes from './src/routes/healthRoutes.js'
 import userRoutes from './src/routes/userRoutes.js'
+import analysisRoutes from './src/routes/analysisRoutes.js'
 import errorMiddleware from './src/middlewares/errorMiddleware.js'
 
 const app = express()
@@ -21,6 +22,7 @@ app.get('/', (req, res) => {
 })
 app.use('/', healthRoutes)
 app.use('/', userRoutes)
+app.use('/', analysisRoutes)
 
 // define middleware como última camada de tratamento de erros
 app.use(errorMiddleware)
