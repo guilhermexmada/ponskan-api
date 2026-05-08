@@ -1,9 +1,14 @@
 import express from 'express'
+import cors from 'cors'
+import corsOptions from './src/config/cors-config.js'
 import healthRoutes from './src/routes/healthRoutes.js'
 import userRoutes from './src/routes/userRoutes.js'
 import errorMiddleware from './src/middlewares/errorMiddleware.js'
 
 const app = express()
+
+// define middleware primário para segurança das requisições
+app.use(cors(corsOptions))
 
 // configurações express
 app.use(express.static('public'))
