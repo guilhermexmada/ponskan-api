@@ -18,18 +18,14 @@ class CNNService {
 
             const finalScore = scores.reduce((a, b) => a + b, 0) / scores.length
 
-            const probability = (finalScore).toFixed(2)
-            const blackSpot = probability >= 0.9 ? true : false
-            const confidence = Math.random().toFixed(2)
+            const confidence = (finalScore).toFixed(2)
+            const blackSpot = confidence >= 0.8 ? true : false
 
             await new Promise(resolve => setTimeout(resolve, 2000))
 
             const inference = {
-                finalScore,
-                scores,
-                probability,
-                blackSpot,
                 confidence,
+                blackSpot,
                 data
             }
 

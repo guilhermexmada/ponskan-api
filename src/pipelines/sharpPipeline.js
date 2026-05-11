@@ -29,7 +29,7 @@ class SharpPipeline {
 
         // output
         const processedBuffer = pipeline.toBuffer()
-        return processedBuffer
+        return processedBuffer  
     }
     async simulateTraining(buffer, originalName, analysisId) {
         // simula data augmentation
@@ -81,8 +81,8 @@ class SharpPipeline {
             }
 
             // simula probabilidade
-            console.log('total de pixels: ', totalPixels)
-            console.log('pixels escuros: ', count)
+            // console.log('total de pixels: ', totalPixels)
+            // console.log('pixels escuros: ', count)
             const density = (count / totalPixels) * 100
             const prob = Math.min(density / 2, 1) // normaliza entre 0 e 1, considera 5% = alta probabilidade, 1 = trava de segurança (clamping)
             probabilities.push(prob)

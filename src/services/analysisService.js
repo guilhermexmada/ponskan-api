@@ -3,14 +3,14 @@ import AppError from '../utils/appError.js'
 import imageQueue from '../queues/imageQueue.js'
 
 class AnalysisService {
-    async initAnalysis(userId, files) {
+    async create(userId, files) {
         // cria entidade pai
         const analysis = await Analise.create({ id_usuario: userId })
 
-        // prepara dados para fila do BullMQ
-        // buffers + metadados
+        // prepara dados para fila do BullMQ: buffer + metadados
         const jobData = {
             analysisId: analysis.id,
+            userId: userId,
             files: files.map(f => ({
                 buffer: f.buffer,
                 originalName: f.originalname,
@@ -22,6 +22,8 @@ class AnalysisService {
         await imageQueue.add('processar-imagens', jobData)
 
         return analysis
+    }
+    async update(analysisId, data) {
     }
 }
 
