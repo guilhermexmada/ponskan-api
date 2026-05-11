@@ -7,12 +7,12 @@ import { v4 as uuidv4 } from 'uuid'
 
 
 const imageWorker = new Worker('image-processing', async (job) => {
-    const { analysisId, files } = job.data
+    const { analysisId, userId, files } = job.data
     console.log(`>> Processando Análise ${analysisId}`)
     try {
         let analysisObject = []
         for (const file of files) {
-            // envia buffer serializado para pipeline
+            // envia buffer serializado para pipeline de pré-processamento
             const buffer = Buffer.from(file.buffer.data)
             const processedBuffer = await sharpPipeline.preProcess(buffer)
 
@@ -32,6 +32,7 @@ const imageWorker = new Worker('image-processing', async (job) => {
 
             console.log(`>> ${file.originalName} otimizada com sucesso`)
 
+            // monta objeto para envio à CNN
             analysisObject.push({
                 buffer: processedBuffer,
                 metadata: {
@@ -45,8 +46,22 @@ const imageWorker = new Worker('image-processing', async (job) => {
         }
 
         const simulate = await cnnService.simulate(analysisId, analysisObject)
+        console.log(`>> Análise ${analysisId} classificada com sucesso`)
 
-        console.log(simulate)
+        if (simulate.blackSpot === true) {
+            for (const object of analysisObject) {
+
+                // move arquivos temporários para pastas definitivas
+                const processedPath = await storageService.move(object.metadata.path, 'processed', analysisId, userId)
+                const uploadedPath = await storageService.move(object.metadata.originalPath, 'uploads', analysisId, userId)
+                console.log(`>> Imagens salvas em diretório local com sucesso`)
+
+                // limpa pasta temporária
+                await storageService.cleanTemp(`${analysisId}`)
+                console.log(`>> Pasta temporária limpa com sucesso`)
+            }
+
+        }
     } catch (error) {
         console.error(`>> Erro ao processar job ${job.id} : ${error.message}`)
     }
