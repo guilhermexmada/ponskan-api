@@ -30,7 +30,8 @@ const Imagem = connection.define('imagens', {
         type: DataTypes.ENUM(
             'image/jpeg',
             'image/jpg',
-            'image/png'
+            'image/png',
+            'image/webp'
         ),
         allowNull: false,
     },
