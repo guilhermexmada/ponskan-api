@@ -1,10 +1,16 @@
 import path from 'path'
 import fs from 'fs/promises' // importa módulo assíncrono do pacote
+import { v4 as uuidv4 } from 'uuid'
+import AppError from '../appError.js'
 
 class StorageService {
-    async save(buffer, folder, filename) {
+    async save(buffer, folder, ext) {
+        if (!Buffer.isBuffer(buffer)) {
+            throw new AppError('Buffer inválido', 400)
+        }
         // define caminho absoluto de destino
-        const fullPath = path.resolve('storage', folder, filename)
+        const filename = uuidv4()
+        const fullPath = path.resolve('storage', folder, `${filename}${ext}`)
 
         // cria pasta de destino
         await fs.mkdir(path.dirname(fullPath), { recursive: true })
