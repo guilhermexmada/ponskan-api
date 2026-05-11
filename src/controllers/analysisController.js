@@ -3,7 +3,7 @@ import APIResponse from '../utils/apiResponse.js'
 import AppError from '../utils/appError.js'
 
 class AnalysisController {
-    async store(req, res, next) {
+    async initAnalysis(req, res, next) {
         try {
             const { user_id } = req.body // vem do token
             const files = req.files
@@ -12,7 +12,7 @@ class AnalysisController {
                 throw new AppError('Nenhuma imagem enviada', 400)
             }
 
-            const result = await analysisService.initAnalysis(user_id, files)
+            const result = await analysisService.create(user_id, files)
 
             return new APIResponse(res, 'Análise iniciada', 201, result)
         } catch (error) {

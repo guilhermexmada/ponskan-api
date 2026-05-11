@@ -5,6 +5,6 @@ import uploadMiddleware from '../middlewares/uploadMiddleware.js'
 
 const router = express.Router()
 
-router.post('/analysis', Authorization, uploadMiddleware, analysisController.store) // inicia análise de imagem
+router.post('/analysis', Authorization, uploadMiddleware, analysisController.initAnalysis) // inicia análise de imagem
 
 export default router
