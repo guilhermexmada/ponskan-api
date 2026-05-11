@@ -2,9 +2,9 @@ import { Worker } from 'bullmq'
 import { redisConfig } from '../config/redis-config.js'
 import sharpPipeline from '../pipelines/sharpPipeline.js'
 import storageService from '../utils/storage/storageService.js'
+import imagesService from '../services/imagesService.js'
+import processedService from '../services/processedService.js'
 import cnnService from '../services/cnnService.js'
-import { v4 as uuidv4 } from 'uuid'
-
 
 const imageWorker = new Worker('image-processing', async (job) => {
     const { analysisId, userId, files } = job.data
@@ -20,25 +20,28 @@ const imageWorker = new Worker('image-processing', async (job) => {
             const tempPath = await storageService.save(
                 processedBuffer,
                 `temp/${analysisId}`,
-                `${uuidv4()}.webp`
+                '.webp'
             )
 
             // salva temporariamente buffer original
             const originalTempPath = await storageService.save(
                 buffer,
                 `temp/${analysisId}`,
-                `${uuidv4()}.webp`
+                '.webp'
             )
-
-            console.log(`>> ${file.originalName} otimizada com sucesso`)
 
             // monta objeto para envio à CNN
             analysisObject.push({
                 buffer: processedBuffer,
                 metadata: {
                     path: tempPath,
+                    originalName: file.originalName,
                     originalPath: originalTempPath,
-                    resolution: [224, 224],
+                    mimeType: 'image/webp',
+                    originalMimeType: file.mimeType,
+                    size: processedBuffer.length,
+                    originalSize: buffer.length,
+                    resolution: '[224, 224]',
                     colorspace: 'sRGB',
                     timestamp: Date.now(),
                 }
@@ -54,13 +57,27 @@ const imageWorker = new Worker('image-processing', async (job) => {
                 // move arquivos temporários para pastas definitivas
                 const processedPath = await storageService.move(object.metadata.path, 'processed', analysisId, userId)
                 const uploadedPath = await storageService.move(object.metadata.originalPath, 'uploads', analysisId, userId)
-                console.log(`>> Imagens salvas em diretório local com sucesso`)
 
-                // limpa pasta temporária
-                await storageService.cleanTemp(`${analysisId}`)
-                console.log(`>> Pasta temporária limpa com sucesso`)
+                // salva imagens no banco
+                const meta = object.metadata
+                const uploadedImage = await imagesService.create({
+                    id_analise: analysisId,
+                    nome: meta.originalName,
+                    caminho: uploadedPath,
+                    tipo_mime: meta.originalMimeType,
+                    tamanho: meta.size
+                })
+                const processedImage = await processedService.create({
+                    id_imagem: uploadedImage.id,
+                    nome: meta.originalName,
+                    caminho: processedPath,
+                    tipo_mime: meta.mimeType,
+                    tamanho: meta.size
+                })
             }
-
+            // limpa pasta temporária
+            await storageService.cleanTemp(`${analysisId}`)
+            console.log(`>> Pasta temporária limpa com sucesso`)
         }
     } catch (error) {
         console.error(`>> Erro ao processar job ${job.id} : ${error.message}`)
