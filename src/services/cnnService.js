@@ -5,17 +5,20 @@ import sharpPipeline from "../pipelines/sharpPipeline.js"
 class CNNService {
     async simulate(analysisId, data) {
         try {
-            console.log(`>> Iniciando classificação da Análise ${analysisId} com ${data.length} imagens`)
+            const processedObject = data.processed
+            const originalObject = data.original
+            console.log(`>> Iniciando classificação da Análise ${analysisId} com ${processedObject.length} imagens`)
 
             // gera array com probabilidade de cada imagem
             let scores = [];
-            for (const object of data) {
+            for (const object of processedObject) {
                 const buffer = object.buffer;
                 const variations = await sharpPipeline.simulateTraining(buffer);
                 const imageProbability = await sharpPipeline.simulateClassification(variations);
                 scores.push(imageProbability);
             }
 
+            // média final
             const finalScore = scores.reduce((a, b) => a + b, 0) / scores.length
 
             const confidence = (finalScore).toFixed(2)

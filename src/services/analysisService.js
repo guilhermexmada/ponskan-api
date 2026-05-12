@@ -6,20 +6,21 @@ class AnalysisService {
     async create(userId, files) {
         // cria entidade pai
         const analysis = await Analise.create({ id_usuario: userId })
-
-        // prepara dados para fila do BullMQ: buffer + metadados
+        console.log(files)
+        // prepara dados para fila do BullMQ: ids + buffer + metadados
         const jobData = {
             analysisId: analysis.id,
             userId: userId,
-            files: files.map(f => ({
-                buffer: f.buffer,
-                originalName: f.originalname,
-                mimeType: f.mimetype
+            images: files.map(file => ({
+                buffer: file.buffer,
+                originalName: file.originalname,
+                mimeType: file.mimetype,
+                size: file.size
             }))
         }
 
-        // adiciona à fila de processamento (Sharp + CNN)
-        await imageQueue.add('processar-imagens', jobData)
+        // adiciona job à fila de processamento (Sharp + CNN + Sequelize)
+        await imageQueue.add('analysis-job', jobData)
 
         return analysis
     }
