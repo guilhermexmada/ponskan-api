@@ -6,7 +6,6 @@ class AnalysisService {
     async create(userId, files) {
         // cria entidade pai
         const analysis = await Analise.create({ id_usuario: userId })
-        console.log(files)
         // prepara dados para fila do BullMQ: ids + buffer + metadados
         const jobData = {
             analysisId: analysis.id,
@@ -25,6 +24,26 @@ class AnalysisService {
         return analysis
     }
     async update(analysisId, data) {
+        try {
+            if (!analysisId) {
+                throw new AppError('Erro ao enviar ID da análise referente', 400)
+            }
+            if (!data) {
+                throw new AppError('Erro ao enviar dados para atualização da análise', 400)
+            }
+            const updatedAnalysis = await Analise.update(data, {
+                where: {
+                    id_analise: analysisId
+                }
+            })
+            return {
+                id: analysisId,
+                userId: updatedAnalysis.id_usuario,
+                status: updatedAnalysis.status
+            }
+        } catch (error) {
+
+        }
     }
 }
 

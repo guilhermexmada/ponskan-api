@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 
 class SharpPipeline {
-    async preProcess(buffer, originalName, analysisId) {
+    async preProcess(buffer) {
 
         let pipeline = await sharp(buffer)
 
@@ -31,7 +31,7 @@ class SharpPipeline {
         const processedBuffer = pipeline.toBuffer()
         return processedBuffer  
     }
-    async simulateTraining(buffer, originalName, analysisId) {
+    async simulateTraining(buffer) {
         // simula data augmentation
         const variations = [
             // original padronizada
