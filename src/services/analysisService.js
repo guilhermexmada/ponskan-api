@@ -3,25 +3,47 @@ import AppError from '../utils/appError.js'
 import imageQueue from '../queues/imageQueue.js'
 
 class AnalysisService {
-    async initAnalysis(userId, files) {
+    async create(userId, files) {
         // cria entidade pai
         const analysis = await Analise.create({ id_usuario: userId })
-
-        // prepara dados para fila do BullMQ
-        // buffers + metadados
+        // prepara dados para fila do BullMQ: ids + buffer + metadados
         const jobData = {
             analysisId: analysis.id,
-            files: files.map(f => ({
-                buffer: f.buffer,
-                originalName: f.originalname,
-                mimeType: f.mimetype
+            userId: userId,
+            images: files.map(file => ({
+                buffer: file.buffer,
+                originalName: file.originalname,
+                mimeType: file.mimetype,
+                size: file.size
             }))
         }
 
-        // adiciona à fila de processamento (Sharp + CNN)
-        await imageQueue.add('processar-imagens', jobData)
+        // adiciona job à fila de processamento (Sharp + CNN + Sequelize)
+        await imageQueue.add('analysis-job', jobData)
 
         return analysis
+    }
+    async update(analysisId, data) {
+        try {
+            if (!analysisId) {
+                throw new AppError('Erro ao enviar ID da análise referente', 400)
+            }
+            if (!data) {
+                throw new AppError('Erro ao enviar dados para atualização da análise', 400)
+            }
+            const updatedAnalysis = await Analise.update(data, {
+                where: {
+                    id_analise: analysisId
+                }
+            })
+            return {
+                id: analysisId,
+                userId: updatedAnalysis.id_usuario,
+                status: updatedAnalysis.status
+            }
+        } catch (error) {
+
+        }
     }
 }
 

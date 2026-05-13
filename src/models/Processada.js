@@ -27,7 +27,8 @@ const Processada = connection.define('processadas', {
         type: DataTypes.ENUM(
             'image/jpeg',
             'image/jpg',
-            'image/png'
+            'image/png',
+            'image/webp'
         ),
         allowNull: false,
     },

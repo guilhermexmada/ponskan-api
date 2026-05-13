@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 
 class SharpPipeline {
-    async preProcess(buffer, originalName, analysisId) {
+    async preProcess(buffer) {
 
         let pipeline = await sharp(buffer)
 
@@ -29,9 +29,9 @@ class SharpPipeline {
 
         // output
         const processedBuffer = pipeline.toBuffer()
-        return processedBuffer
+        return processedBuffer  
     }
-    async simulateTraining(buffer, originalName, analysisId) {
+    async simulateTraining(buffer) {
         // simula data augmentation
         const variations = [
             // original padronizada
@@ -81,8 +81,8 @@ class SharpPipeline {
             }
 
             // simula probabilidade
-            console.log('total de pixels: ', totalPixels)
-            console.log('pixels escuros: ', count)
+            // console.log('total de pixels: ', totalPixels)
+            // console.log('pixels escuros: ', count)
             const density = (count / totalPixels) * 100
             const prob = Math.min(density / 2, 1) // normaliza entre 0 e 1, considera 5% = alta probabilidade, 1 = trava de segurança (clamping)
             probabilities.push(prob)
