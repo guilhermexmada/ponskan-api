@@ -29,14 +29,14 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
             // salva temporariamente buffer processado 
             const tempProcessedPath = await storageService.save(
                 processedBuffer,
-                `temp/${analysisId}`,
+                `${analysisId}`,
                 '.webp'
             )
 
             // salva temporariamente buffer original
             const tempOriginalPath = await storageService.save(
                 originalBuffer,
-                `temp/${analysisId}`,
+                `${analysisId}`,
                 '.webp'
             )
             // monta objeto para envio à CNN
@@ -75,14 +75,12 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
         const endCNN = performance.now()
 
         for (const object of analysisObject) {
-            console.log('0')
             // separa imagens e versões processadas
             const processedObjectMeta = object.processed.metadata
             const originalObjectMeta = object.original.metadata
             // move arquivos temporários para pastas definitivas
             const processedPath = await storageService.move(processedObjectMeta.tempPath, 'processed', analysisId, userId)
             const originalPath = await storageService.move(originalObjectMeta.tempPath, 'uploads', analysisId, userId)
-            console.log('1')
             // salva imagens no banco
             const image = await imagesService.create({
                 id_analise: analysisId,
@@ -91,7 +89,6 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
                 tipo_mime: originalObjectMeta.mimeType,
                 tamanho: originalObjectMeta.size
             })
-            console.log('2')
             const processed = await processedService.create({
                 id_imagem: image.id,
                 nome: originalObjectMeta.name,
@@ -100,7 +97,6 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
                 tamanho: processedObjectMeta.size
             })
         }
-        console.log('3')
         // limpa pasta temporária (após o loop)
         await storageService.cleanTemp(`${analysisId}`)
         console.log(`>> Pasta temporária limpa com sucesso`)

@@ -10,7 +10,7 @@ class StorageService {
         }
         // define caminho absoluto de destino
         const filename = uuidv4()
-        const fullPath = path.resolve('storage', folder, `${filename}${ext}`)
+        const fullPath = path.resolve('storage', 'temp', folder, `${filename}${ext}`)
 
         // cria pasta de destino
         await fs.mkdir(path.dirname(fullPath), { recursive: true })
