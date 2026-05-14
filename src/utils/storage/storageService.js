@@ -28,7 +28,9 @@ class StorageService {
         // define caminho de destino
         const parsedPath = path.parse(fullPath)
         // caminho relativo dentro do storage
-        const relativeDestination = path.join(
+        const relativeDestination = path.posix.join(
+            'storage',
+            `${folder}`,
             'analysis',
             `${year}`,
             `${month}`,
@@ -38,8 +40,6 @@ class StorageService {
         )
         // caminho absoluto final
         const fullDestination = path.resolve(
-            'storage',
-            folder,
             relativeDestination
         )
         // cria diretório
@@ -49,7 +49,7 @@ class StorageService {
         // move arquivo
         await fs.rename(fullPath, fullDestination)
 
-        return fullDestination
+        return relativeDestination
     }
     async cleanTemp(folder) {
         const tempDir = path.resolve('storage', 'temp', folder)
