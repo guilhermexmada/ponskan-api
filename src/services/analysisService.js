@@ -1,7 +1,6 @@
 import Analise from '../models/Analise.js'
 import AppError from '../utils/appError.js'
 import imageQueue from '../queues/imageQueue.js'
-import AppError from '../utils/appError.js'
 
 class AnalysisService {
     async create(userId, files) {
@@ -33,7 +32,7 @@ class AnalysisService {
         }
         const updatedAnalysis = await Analise.update(data, {
             where: {
-                id_analise: analysisId
+                id: analysisId
             }
         })
         return {

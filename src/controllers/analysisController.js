@@ -7,7 +7,8 @@ import AppError from '../utils/appError.js'
 class AnalysisController {
     async initAnalysis(req, res, next) {
         try {
-            const { user_id } = req.body // vem do token
+            const loggedUser = req.loggedUser
+            const user_id = loggedUser.id
             const files = req.files
 
             if (!files || files.length === 0) {
@@ -23,7 +24,7 @@ class AnalysisController {
     }
     async getPolling(req, res, next) {
         try {
-            const analysis_id = req.params
+            const analysis_id  = req.params.id
 
             const analysis = await analysisService.get(analysis_id)
 
