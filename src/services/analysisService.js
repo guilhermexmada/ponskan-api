@@ -1,6 +1,7 @@
 import Analise from '../models/Analise.js'
 import AppError from '../utils/appError.js'
 import imageQueue from '../queues/imageQueue.js'
+import AppError from '../utils/appError.js'
 
 class AnalysisService {
     async create(userId, files) {
@@ -24,26 +25,29 @@ class AnalysisService {
         return analysis
     }
     async update(analysisId, data) {
-        try {
-            if (!analysisId) {
-                throw new AppError('Erro ao enviar ID da análise referente', 400)
-            }
-            if (!data) {
-                throw new AppError('Erro ao enviar dados para atualização da análise', 400)
-            }
-            const updatedAnalysis = await Analise.update(data, {
-                where: {
-                    id_analise: analysisId
-                }
-            })
-            return {
-                id: analysisId,
-                userId: updatedAnalysis.id_usuario,
-                status: updatedAnalysis.status
-            }
-        } catch (error) {
-
+        if (!analysisId) {
+            throw new AppError('Erro ao enviar ID da análise referente', 400)
         }
+        if (!data) {
+            throw new AppError('Erro ao enviar dados para atualização da análise', 400)
+        }
+        const updatedAnalysis = await Analise.update(data, {
+            where: {
+                id_analise: analysisId
+            }
+        })
+        return {
+            id: analysisId,
+            userId: updatedAnalysis.id_usuario,
+            status: updatedAnalysis.status
+        }
+    }
+    async get(analysisId) {
+        if (!analysisId) {
+            throw new AppError('Erro ao enviar ID da análise referente', 400)
+        }
+        const analysis = await Analise.findByPk(analysisId)
+        return analysis
     }
 }
 

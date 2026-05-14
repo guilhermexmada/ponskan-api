@@ -17,6 +17,17 @@ class ImageService {
             throw new AppError('Não foi possível salvar a imagem: erro interno do servidor')
         }
     }
+    async getByAnalysis(analysisId){
+         if (!analysisId) {
+            throw new AppError('Erro ao enviar ID da análise referente', 400)
+        }
+        const images = await Imagem.findAll({
+            where: {
+                id_analise: analysisId
+            }
+        })
+        return images
+    }
 }
 
 export default new ImageService()
