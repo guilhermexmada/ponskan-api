@@ -16,6 +16,17 @@ class ClassificationService {
             throw new AppError('Não foi possível salvar a classificação: erro interno do servidor')
         }
     }
+    async getByAnalysis(analysisId){
+         if (!analysisId) {
+            throw new AppError('Erro ao enviar ID da análise referente', 400)
+        }
+        const classification = await Classificacao.findAll({
+            where: {
+                id_analise: analysisId
+            }
+        })
+        return classification
+    }
 }
 
 export default new ClassificationService()
