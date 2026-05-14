@@ -7,4 +7,6 @@ const router = express.Router()
 
 router.post('/analysis', Authorization, uploadMiddleware, analysisController.initAnalysis) // inicia análise de imagem
 
+router.get('/analysis/:id', Authorization, analysisController.getPolling) // verifica status da análise e gera relatório
+
 export default router
