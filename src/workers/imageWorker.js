@@ -18,7 +18,7 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
     // extrai dados do job
     const { analysisId, userId, images } = job.data
     try {
-        console.log(`>> Processando Análise ${analysisId}`)
+        console.log(`>> Processando Análise ${analysisId} ... Tentativa ${job.attemptsMade}`)
         let analysisObject = []
 
         for (const image of images) {
@@ -110,22 +110,30 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
             confianca: inference.confidence,
             modelo_cnn: inference.cnnModel
         })
-
-        // atualiza análise no banco
-        const updatedAnalysis = await analysisService.update(analysisId, {
-            status: 'finalizada'
-        })
-
     } catch (error) {
         console.error(`>> Erro ao processar job ${job.id} : ${error.message}`)
     }
 }, { connection: redisConfig })
 
-imageWorker.on('completed', (job) => {
+imageWorker.on('completed', async (job) => {
+    const { analysisId } = job.data
+    // atualiza análise no banco
+    const completeAnaluysis = await analysisService.update(analysisId, {
+        status: 'finalizada'
+    })
     // finaliza contador da execução do worker
     const endWorker = performance.now()
     const workerExecTime = endWorker - startWorker
     console.log(`>> Job ${job.id} foi completado em ${workerExecTime} ms`)
+})
+
+imageWorker.on('failed', async (job, err) => {
+    const { analysisId } = job.data
+    // atualiza análise no banco
+    const cancelAnalysis = await analysisService.update(analysisId, {
+        status: 'cancelada'
+    })
+    console.error(`>> Job ${job.id} falhou`)
 })
 
 // imageWorker.on('ready', () => console.log('Worker conectado ao Redis e pronto!'));
