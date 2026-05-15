@@ -8,14 +8,14 @@ class AnalysisController {
     async initAnalysis(req, res, next) {
         try {
             const loggedUser = req.loggedUser
-            const user_id = loggedUser.id
+            const userId = loggedUser.id
             const files = req.files
 
             if (!files || files.length === 0) {
                 throw new AppError('Nenhuma imagem enviada', 400)
             }
 
-            const result = await analysisService.create(user_id, files)
+            const result = await analysisService.create(userId, files)
 
             return new APIResponse(res, 'Análise iniciada', 201, result)
         } catch (error) {
@@ -24,17 +24,17 @@ class AnalysisController {
     }
     async getPolling(req, res, next) {
         try {
-            const analysis_id  = req.params.id
+            const analysisId  = req.params.id
 
-            const analysis = await analysisService.get(analysis_id)
+            const analysis = await analysisService.get(analysisId)
 
             if (analysis.status === 'pendente') {
                 return new APIResponse(res, 'A análise ainda está sendo processada', 200, analysis)
             } else if (analysis.status === 'cancelada') {
                 return new APIResponse(res, 'A análise foi cancelada devido a algum erro', 500, analysis)
             } else if (analysis.status === 'finalizada') {
-                const images = await imagesService.getByAnalysis(analysis_id)
-                const classification = await classificationService.getByAnalysis(analysis_id)
+                const images = await imagesService.getByAnalysis(analysisId)
+                const classification = await classificationService.getByAnalysis(analysisId)
 
                 const result = {
                     analysis,
