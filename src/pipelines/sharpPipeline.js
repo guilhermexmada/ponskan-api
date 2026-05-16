@@ -29,7 +29,7 @@ class SharpPipeline {
 
         // output
         const processedBuffer = pipeline.toBuffer()
-        return processedBuffer  
+        return processedBuffer
     }
     async simulateTraining(buffer) {
         // simula data augmentation
@@ -48,8 +48,10 @@ class SharpPipeline {
         ]
         // simula normalização
         const finalImages = await Promise.all(variations.map(v =>
-            v.grayscale()
-                .normalise()
+            // v.grayscale()
+            //     .normalise()
+            v.removeAlpha()
+                .toColorspace('srgb')
                 .toBuffer()
         ))
 
@@ -74,8 +76,11 @@ class SharpPipeline {
                 const g = data[i + 1]
                 const b = data[i + 2]
 
-                // regra simulada: conta pixels necróticos (baixos valores em todos os canais)
-                if (r < 30 && g < 30 && b < 30) {
+                // luminância percebida (padrão BT.601)
+                const luminance = 0.299 * r + 0.587 * g + 0.114 * b
+
+                // pixel é considerado "escuro" se luminância baixa
+                if (luminance < 60) {
                     count++
                 }
             }
