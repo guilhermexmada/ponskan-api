@@ -9,4 +9,6 @@ router.post('/analysis', Authorization, uploadMiddleware, analysisController.ini
 
 router.get('/analysis/:id', Authorization, analysisController.getPolling) // verifica status da análise e gera relatório
 
+router.get('/analysis', Authorization, analysisController.getAllAnalysis) // listagem das análises
+
 export default router

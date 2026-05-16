@@ -48,6 +48,15 @@ class AnalysisController {
             next(error)
         }
     }
+    async getAllAnalysis(req, res, next){
+        try {
+            const analysisList = await analysisService.getAll()
+            const result = analysisList
+            return new APIResponse(res, 'Listagem de Análises realizada com sucesso', 200, result)
+        } catch (error) {
+            next(error)
+        }
+    }
 }
 
 export default new AnalysisController()

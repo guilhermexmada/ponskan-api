@@ -1,6 +1,7 @@
 import Analise from '../models/Analise.js'
 import AppError from '../utils/appError.js'
 import imageQueue from '../queues/imageQueue.js'
+import Classificacao from '../models/Classificacao.js'
 
 class AnalysisService {
     async create(userId, files) {
@@ -55,6 +56,19 @@ class AnalysisService {
         }
         const analysis = await Analise.findByPk(analysisId)
         return analysis
+    }
+    async getAll(){
+        const analysisList = await Analise.findAll({
+            order: [ [ 'createdAt', 'DESC' ]],
+            include: [
+                {
+                    model: Classificacao,
+                    as: 'classificacao',
+                    attributes: ['id', 'classe', 'confianca', 'tempo_execucao', 'createdAt']
+                }
+            ]
+        })
+        return analysisList
     }
 }
 
