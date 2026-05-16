@@ -29,7 +29,7 @@ class CNNService {
             const preDiagnosis = confidence >= 0.8 ? 'true' : 'false'
 
             await new Promise(resolve => setTimeout(resolve, 5000)) // delay artificial
-
+            console.log(`[SCORE] ${finalScore} -> [CLASS] ${preDiagnosis}`)
             return {
                 confidence,
                 preDiagnosis,

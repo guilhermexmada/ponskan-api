@@ -19,7 +19,15 @@ class AnalysisService {
         }
 
         // adiciona job à fila de processamento (Sharp + CNN + Sequelize)
-        await imageQueue.add('analysis-job', jobData)
+        await imageQueue.add('analysis-job', jobData, {
+            attempts: 3,
+            backoff: {
+                type: 'exponential',
+                delay: '3000'
+            },
+            removeOnComplete: 50,
+            removeOnFail: 20
+        })
 
         return analysis
     }
