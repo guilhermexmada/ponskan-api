@@ -26,6 +26,10 @@ class AnalysisController {
         try {
             const analysisId = req.params.id
 
+            if(!analysisId) {
+                throw new AppError('Erro ao enviar ID da análise referente', 400)
+            }
+
             const analysis = await analysisService.get(analysisId)
 
             if (analysis.status === 'pendente') {
