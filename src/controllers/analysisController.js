@@ -24,7 +24,7 @@ class AnalysisController {
     }
     async getPolling(req, res, next) {
         try {
-            const analysisId  = req.params.id
+            const analysisId = req.params.id
 
             const analysis = await analysisService.get(analysisId)
 
@@ -48,9 +48,12 @@ class AnalysisController {
             next(error)
         }
     }
-    async getAllAnalysis(req, res, next){
+    async getAllAnalysis(req, res, next) {
         try {
-            const analysisList = await analysisService.getAll()
+            // requer número da página
+            const page = req.query.page || 1
+
+            const analysisList = await analysisService.getAll(page)
             const result = analysisList
             return new APIResponse(res, 'Listagem de Análises realizada com sucesso', 200, result)
         } catch (error) {

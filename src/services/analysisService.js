@@ -2,6 +2,8 @@ import Analise from '../models/Analise.js'
 import AppError from '../utils/appError.js'
 import imageQueue from '../queues/imageQueue.js'
 import Classificacao from '../models/Classificacao.js'
+import Imagem from '../models/Imagem.js'
+import { fn, col, literal } from 'sequelize'
 
 class AnalysisService {
     async create(userId, files) {
@@ -57,16 +59,41 @@ class AnalysisService {
         const analysis = await Analise.findByPk(analysisId)
         return analysis
     }
-    async getAll(){
+    async getAll(page = 1) {
+        // parâmetros de paginação
+        const limit = 20
+        const offset = (page - 1) * limit
+
         const analysisList = await Analise.findAll({
-            order: [ [ 'createdAt', 'DESC' ]],
+            attributes: [
+                'id',
+                'status',
+                'createdAt',
+                // subquery para contar imagens
+                [
+                    literal(`(
+                    SELECT COUNT(*)
+                    FROM imagens AS imagem
+                    WHERE imagem.id_analise = Analises.id
+                )`),
+                    'imagesCount'
+                ]
+            ],
+            order: [['createdAt', 'DESC']],
             include: [
                 {
                     model: Classificacao,
                     as: 'classificacao',
                     attributes: ['id', 'classe', 'confianca', 'tempo_execucao', 'createdAt']
+                },
+                {
+                    model: Imagem,
+                    as: 'imagem',
+                    attributes: []
                 }
-            ]
+            ],
+            limit,
+            offset
         })
         return analysisList
     }
