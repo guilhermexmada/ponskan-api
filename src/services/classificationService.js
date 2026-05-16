@@ -1,9 +1,9 @@
 import Classificacao from '../models/Classificacao.js'
 
 class ClassificationService {
-    async create(data){
+    async create(data) {
         try {
-            if(!data){
+            if (!data) {
                 throw new AppError('Erro ao enviar dados da classificação', 400)
             }
             const classification = await Classificacao.create(data)
@@ -16,8 +16,8 @@ class ClassificationService {
             throw new AppError('Não foi possível salvar a classificação: erro interno do servidor')
         }
     }
-    async getByAnalysis(analysisId){
-         if (!analysisId) {
+    async getByAnalysis(analysisId) {
+        if (!analysisId) {
             throw new AppError('Erro ao enviar ID da análise referente', 400)
         }
         const classification = await Classificacao.findAll({
@@ -26,6 +26,12 @@ class ClassificationService {
             }
         })
         return classification
+    }
+    async getAll() {
+        const classificationList = await Classificacao.findAll({
+            order: [['createdAt', 'DESC']]
+        })
+        return classificationList
     }
 }
 

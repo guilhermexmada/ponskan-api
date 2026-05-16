@@ -33,7 +33,8 @@ const Classificacao = connection.define('classificacoes', {
 },
     {
         tableName: 'classificacoes',
-        timestamps: true
+        timestamps: true,
+        paranoid: true
     }
 )
 

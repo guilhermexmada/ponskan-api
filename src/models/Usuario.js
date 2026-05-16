@@ -46,7 +46,8 @@ const Usuario = connection.define('usuarios', {
 },
     {
         tableName: 'usuarios',
-        timestamps: true
+        timestamps: true,
+        paranoid: true
     }
 )
 

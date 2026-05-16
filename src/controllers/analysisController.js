@@ -24,7 +24,11 @@ class AnalysisController {
     }
     async getPolling(req, res, next) {
         try {
-            const analysisId  = req.params.id
+            const analysisId = req.params.id
+
+            if(!analysisId) {
+                throw new AppError('Erro ao enviar ID da análise referente', 400)
+            }
 
             const analysis = await analysisService.get(analysisId)
 
@@ -44,6 +48,18 @@ class AnalysisController {
 
                 return new APIResponse(res, 'Relatório da Análise consultado com sucesso', 200, result)
             }
+        } catch (error) {
+            next(error)
+        }
+    }
+    async getAllAnalysis(req, res, next) {
+        try {
+            // requer número da página
+            const page = req.query.page || 1
+
+            const analysisList = await analysisService.getAll(page)
+            const result = analysisList
+            return new APIResponse(res, 'Listagem de Análises realizada com sucesso', 200, result)
         } catch (error) {
             next(error)
         }

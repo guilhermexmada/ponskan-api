@@ -18,7 +18,7 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
     // extrai dados do job
     const { analysisId, userId, images } = job.data
     try {
-        console.log(`>> Processando Análise ${analysisId} ... Tentativa ${job.attemptsMade}`)
+        console.log(`>> Processando Análise ${analysisId} ... Tentativa ${job.attemptsMade + 1}`)
         let analysisObject = []
 
         for (const image of images) {

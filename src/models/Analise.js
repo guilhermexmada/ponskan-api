@@ -23,7 +23,8 @@ const Analise = connection.define('analises', {
 },
     {
         tableName: 'analises',
-        timestamps: true
+        timestamps: true,
+        paranoid: true
     }
 )
 

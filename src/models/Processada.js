@@ -42,7 +42,8 @@ const Processada = connection.define('processadas', {
 },
     {
         tableName: 'processadas',
-        timestamps: true
+        timestamps: true,
+        paranoid: true
     }
 )
 
