@@ -45,7 +45,8 @@ const Imagem = connection.define('imagens', {
 },
     {
         tableName: 'imagens',
-        timestamps: true
+        timestamps: true,
+        paranoid: true
     }
 )
 
