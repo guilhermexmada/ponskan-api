@@ -23,8 +23,12 @@ class AuthService {
         if (!isMatch) {
             throw new AppError('Suas credenciais são inválidas: verifique e tente novamente', 401)
         }
-        const token = this.generateToken(user.id, user.email)
-        return token
+        const token = await this.generateToken(user.id, user.email)
+        
+        return {
+            token: token,
+            user: user
+        }
     }
     async hashPassword(password) {
         const salt = await bcrypt.genSaltSync(10)
