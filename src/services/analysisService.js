@@ -59,7 +59,7 @@ class AnalysisService {
         const analysis = await Analise.findByPk(analysisId)
         return analysis
     }
-    async getAll(page = 1) {
+    async getAll(userId, page = 1) {
         // parâmetros de paginação
         const limit = 20
         const offset = (page - 1) * limit
@@ -92,6 +92,9 @@ class AnalysisService {
                     attributes: []
                 }
             ],
+            where: {
+                id_usuario: userId
+            },
             limit,
             offset
         })
