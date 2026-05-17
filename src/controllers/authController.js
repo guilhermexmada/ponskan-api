@@ -13,10 +13,18 @@ class AuthController {
                 throw new AppError('Campos obrigatórios não preenchidos', 400)
             }
 
-            const token = await AuthService.login(email, password)
+            const login = await AuthService.login(email, password)
+            
+            const token = login.token
+            const user = login.user
 
             const result = {
-                token: token
+                token: token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email
+                }
             }
             
             return new APIResponse(res, 'Login realizado com sucesso', 200, result)

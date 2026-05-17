@@ -57,6 +57,7 @@ class UserService {
         return {
             id: user.id,
             email: user.email,
+            name: user.nome,
             password: user.senha,
         }
     }

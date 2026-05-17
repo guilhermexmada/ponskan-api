@@ -35,7 +35,7 @@ const Usuario = connection.define('usuarios', {
         type: DataTypes.STRING
     },
     cnpj: {
-        type: DataTypes.INTEGER
+        type: DataTypes.STRING
     },
     faculdade: {
         type: DataTypes.STRING
@@ -46,7 +46,8 @@ const Usuario = connection.define('usuarios', {
 },
     {
         tableName: 'usuarios',
-        timestamps: true
+        timestamps: true,
+        paranoid: true
     }
 )
 

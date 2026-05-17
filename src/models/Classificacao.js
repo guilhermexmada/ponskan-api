@@ -7,6 +7,14 @@ const Classificacao = connection.define('classificacoes', {
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4
     },
+    id_analise: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+            model: 'analises',
+            key: 'id'
+        }
+    },
     tempo_execucao: {
         type: DataTypes.INTEGER,
     },
@@ -25,7 +33,8 @@ const Classificacao = connection.define('classificacoes', {
 },
     {
         tableName: 'classificacoes',
-        timestamps: true
+        timestamps: true,
+        paranoid: true
     }
 )
 

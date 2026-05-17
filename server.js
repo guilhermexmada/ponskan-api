@@ -1,6 +1,7 @@
 import app from './app.js'
 import { initDatabase } from './src/database/initDB.js'
 import { initStorage } from './src/utils/storage/init.js'
+import imageWorker from './src/workers/imageWorker.js'
 
 const port = process.env.PORT || 4040
 

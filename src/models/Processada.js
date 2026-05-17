@@ -7,6 +7,14 @@ const Processada = connection.define('processadas', {
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4
     },
+    id_imagem: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+            model: 'imagens',
+            key: 'id'
+        }
+    },
     nome: {
         type: DataTypes.STRING,
         allowNull: false
@@ -19,7 +27,8 @@ const Processada = connection.define('processadas', {
         type: DataTypes.ENUM(
             'image/jpeg',
             'image/jpg',
-            'image/png'
+            'image/png',
+            'image/webp'
         ),
         allowNull: false,
     },
@@ -33,7 +42,8 @@ const Processada = connection.define('processadas', {
 },
     {
         tableName: 'processadas',
-        timestamps: true
+        timestamps: true,
+        paranoid: true
     }
 )
 
