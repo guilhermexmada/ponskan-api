@@ -54,10 +54,12 @@ class AnalysisController {
     }
     async getAllAnalysis(req, res, next) {
         try {
+            const loggedUser = req.loggedUser
+            const userId = loggedUser.id
             // requer número da página
             const page = req.query.page || 1
 
-            const analysisList = await analysisService.getAll(page)
+            const analysisList = await analysisService.getAll(userId, page)
             const result = analysisList
             return new APIResponse(res, 'Listagem de Análises realizada com sucesso', 200, result)
         } catch (error) {
