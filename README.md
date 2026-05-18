@@ -1,3 +1,382 @@
+# Guia de Instalação — Ponskan API
+
+Stack: **Node.js + Express · MySQL · Redis (WSL/Ubuntu) · BullMQ**
+
+---
+
+## Sumário
+
+1. [Pré-requisitos](#1-pré-requisitos)
+2. [Banco de dados MySQL](#2-banco-de-dados-mysql)
+3. [Redis no WSL (Ubuntu)](#3-redis-no-wsl-ubuntu)
+4. [Clonar e instalar o projeto](#4-clonar-e-instalar-o-projeto)
+5. [Configurar variáveis de ambiente](#5-configurar-variáveis-de-ambiente)
+6. [Iniciar a aplicação](#6-iniciar-a-aplicação)
+7. [Verificar funcionamento](#7-verificar-funcionamento)
+8. [Referência rápida de comandos](#8-referência-rápida-de-comandos)
+
+---
+
+## 1. Pré-requisitos
+
+Certifique-se de ter instalado na máquina Windows:
+
+| Ferramenta | Versão mínima | Download |
+|------------|---------------|---------|
+| Node.js    | 18.x LTS      | https://nodejs.org |
+| npm        | 9.x           | (incluído com Node.js) |
+| MySQL      | 8.0           | https://dev.mysql.com/downloads/installer |
+| WSL 2 + Ubuntu | 20.04+   | `wsl --install` no PowerShell |
+| Git        | qualquer      | https://git-scm.com |
+
+Para verificar as versões instaladas:
+
+```bash
+node -v
+npm -v
+mysql --version
+wsl --status
+```
+
+---
+
+## 2. Banco de dados MySQL
+
+### 2.1 Criar o banco de dados
+
+Abra o MySQL Workbench ou o terminal MySQL e execute:
+
+```sql
+CREATE DATABASE ponskan CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
+
+### 2.2 Importar o schema
+
+No terminal do Windows (na pasta onde está o arquivo `.sql`):
+
+```bash
+mysql -u root -p ponskan < ponskanDB.sql
+```
+
+> Se o MySQL estiver pedindo senha e você não tiver definido uma, pressione Enter na solicitação de senha.
+
+### 2.3 Confirmar tabelas criadas
+
+```sql
+USE ponskan;
+SHOW TABLES;
+```
+
+Resultado esperado:
+
+```
++--------------------+
+| Tables_in_ponskan  |
++--------------------+
+| analises           |
+| classificacoes     |
+| imagens            |
+| processadas        |
+| usuarios           |
++--------------------+
+```
+
+---
+
+## 3. Redis no WSL (Ubuntu)
+
+O Redis roda dentro do WSL e a API Node.js (no Windows) se conecta a ele via `127.0.0.1:6379`.
+
+### 3.1 Abrir o WSL
+
+```powershell
+wsl
+```
+
+### 3.2 Instalar o Redis
+
+```bash
+sudo apt update
+sudo apt install redis-server -y
+```
+
+### 3.3 Configurar o Redis para aceitar conexões do Windows
+
+Edite o arquivo de configuração:
+
+```bash
+sudo nano /etc/redis/redis.conf
+```
+
+Localize e ajuste as seguintes linhas:
+
+```ini
+# Permite conexões de qualquer interface (incluindo Windows → WSL)
+bind 0.0.0.0
+
+# Desativa o modo protegido (necessário para acesso externo ao WSL)
+protected-mode no
+```
+
+Salve com `Ctrl+O`, `Enter`, `Ctrl+X`.
+
+### 3.4 Iniciar o Redis
+
+```bash
+sudo service redis-server start
+```
+
+### 3.5 Verificar se está rodando
+
+```bash
+redis-cli ping
+```
+
+Resposta esperada: `PONG`
+
+### 3.6 Manter o Redis ativo
+
+O serviço precisa estar rodando **antes** de iniciar a API. Toda vez que abrir um novo terminal WSL, verifique com:
+
+```bash
+sudo service redis-server status
+```
+
+Se necessário, inicie novamente com o comando do passo 3.4.
+
+> **Dica:** Para não precisar iniciar manualmente toda vez, adicione ao final do arquivo `~/.bashrc` no WSL:
+> ```bash
+> sudo service redis-server start > /dev/null 2>&1
+> ```
+
+---
+
+## 4. Clonar e instalar o projeto
+
+### 4.1 Clonar o repositório
+
+```bash
+git clone https://github.com/guilhermexmada/ponskan-api.git
+cd ponskan-api
+```
+
+### 4.2 Instalar dependências
+
+```bash
+npm install
+```
+
+Pacotes instalados pelo `package.json`:
+
+| Pacote | Finalidade |
+|--------|-----------|
+| `express` | Framework HTTP |
+| `sequelize` + `mysql2` | ORM + driver MySQL |
+| `ioredis` + `bullmq` | Cliente Redis + fila de processamento |
+| `bcrypt` | Hash de senhas |
+| `jsonwebtoken` | Autenticação JWT |
+| `multer` | Upload de arquivos (imagens) |
+| `sharp` | Processamento de imagens |
+| `dotenv` | Variáveis de ambiente |
+| `nodemon` | Reinício automático em desenvolvimento |
+| `cors` | Controle de origens permitidas |
+| `validator` | Validação de dados (UUID, e-mail etc.) |
+| `express-rate-limit` | Proteção contra abuso de requisições |
+
+---
+
+## 5. Configurar variáveis de ambiente
+
+Na raiz do projeto, crie um arquivo `.env`:
+
+```bash
+# Na raiz do projeto (Windows)
+copy .env.example .env
+# ou crie manualmente
+```
+
+Conteúdo do `.env`:
+
+```env
+# Banco de dados MySQL
+DB_NAME=ponskan
+DB_USER=root
+DB_PASSWORD=
+DB_HOST=localhost
+DB_PORT=3306
+
+# Servidor
+PORT=8080
+NODE_ENV=development
+
+# JWT
+JWT_SECRET=
+JWT_EXPIRES_IN=1h
+
+# Redis (WSL)
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+# REDIS_PASSWORD=   ← descomente e preencha se configurou senha no Redis
+```
+
+> **Atenção:** Nunca versione o arquivo `.env`. Confirme que ele está no `.gitignore`.
+
+### Variáveis explicadas
+
+| Variável | Valor padrão | Descrição |
+|----------|-------------|-----------|
+| `DB_NAME` | `ponskan` | Nome do banco de dados |
+| `DB_USER` | `root` | Usuário do MySQL |
+| `DB_PASSWORD` | _(vazio)_ | Senha do MySQL |
+| `DB_HOST` | `localhost` | Host do MySQL |
+| `DB_PORT` | `3306` | Porta do MySQL |
+| `PORT` | `8080` | Porta em que a API escuta |
+| `NODE_ENV` | `development` | Ambiente de execução |
+| `JWT_SECRET` | _(string longa)_ | Segredo para assinar tokens JWT |
+| `JWT_EXPIRES_IN` | `1h` | Expiração do token |
+| `REDIS_HOST` | `127.0.0.1` | Host do Redis (WSL = localhost) |
+| `REDIS_PORT` | `6379` | Porta padrão do Redis |
+
+---
+
+## 6. Iniciar a aplicação
+
+### 6.1 Checklist antes de iniciar
+
+- [ ] MySQL rodando e banco `ponskan` criado com as tabelas
+- [ ] Redis rodando no WSL (`redis-cli ping` → `PONG`)
+- [ ] Arquivo `.env` criado e preenchido
+- [ ] Dependências instaladas (`node_modules` presente)
+
+### 6.2 Modo desenvolvimento (com hot reload)
+
+```bash
+npm start
+```
+
+O comando executa `npx nodemon -r dotenv/config server.js`, que:
+- Carrega automaticamente o `.env`
+- Reinicia o servidor a cada alteração nos arquivos
+
+### 6.3 Saída esperada no terminal
+
+```
+>> Redis conectado
+>> Banco de dados sincronizado
+>> Storage iniciado
+>> Aplicação iniciada ... Servidor rodando em http://localhost:8080
+```
+
+> Se aparecer `>> Redis reconectando... Tentativa (1)`, o Redis no WSL não está rodando. Volte ao passo 3.4.
+
+---
+
+## 7. Verificar funcionamento
+
+### 7.1 Health check da API
+
+```bash
+curl http://localhost:8080/health -H "Authorization: Bearer <seu_token>"
+```
+
+Resposta esperada:
+
+```json
+{
+  "success": true,
+  "message": "Serviço disponível",
+  "data": {
+    "api": "rodando",
+    "uptime": 12.5,
+    "timestamp": "2026-05-18T12:00:00.000Z"
+  }
+}
+```
+
+### 7.2 Criar um usuário de teste
+
+```bash
+curl -X POST http://localhost:8080/user \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Teste",
+    "email": "teste@email.com",
+    "password": "123"
+  }'
+```
+
+### 7.3 Fazer login e obter token
+
+```bash
+curl -X POST http://localhost:8080/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "teste@email.com",
+    "password": "123"
+  }'
+```
+
+O campo `data.token` da resposta é o Bearer Token para usar nas demais rotas.
+
+---
+
+## 8. Referência rápida de comandos
+
+### API
+
+```bash
+npm start                     # inicia em modo desenvolvimento
+```
+
+### MySQL
+
+```bash
+mysql -u root -p              # abre o cliente MySQL
+mysql -u root -p ponskan < ponskanDB.sql   # importa o schema
+```
+
+### Redis (no terminal WSL)
+
+```bash
+sudo service redis-server start    # inicia o Redis
+sudo service redis-server stop     # para o Redis
+sudo service redis-server status   # verifica o status
+redis-cli ping                     # testa conectividade (deve retornar PONG)
+redis-cli monitor                  # monitora comandos em tempo real
+```
+
+### WSL
+
+```bash
+wsl                           # abre o terminal Ubuntu
+wsl --shutdown                # desliga o WSL completamente
+```
+
+---
+
+## Solução de problemas comuns
+
+**Erro: `ECONNREFUSED 127.0.0.1:6379`**
+O Redis não está rodando. Abra o WSL e execute `sudo service redis-server start`.
+
+**Erro: `Access denied for user 'root'@'localhost'`**
+A senha do MySQL no `.env` está incorreta. Verifique `DB_PASSWORD`.
+
+**Erro: `Unknown database 'ponskan'`**
+O banco não foi criado. Execute `CREATE DATABASE ponskan;` no MySQL.
+
+**Porta 8080 já em uso**
+Mude o valor de `PORT` no `.env` para outra porta (ex: `3001`) ou encerre o processo que ocupa a porta:
+```bash
+# Windows PowerShell
+netstat -ano | findstr :8080
+taskkill /PID <numero_do_pid> /F
+```
+
+**`nodemon` não reconhecido**
+Execute `npm install` novamente para garantir que as dependências foram instaladas corretamente.
+
+
 # Ponskan API — Documentação
 
 Base URL: `http://localhost:8080`
