@@ -11,10 +11,9 @@ import { timeStamp } from 'console'
 import { buffer } from 'stream/consumers'
 import { performance } from 'node:perf_hooks'
 
-// inicia contador da execução do worker
-const startWorker = performance.now()
-
 const imageWorker = new Worker('analysis-queue', async (job) => {
+    // inicia contador da execução do worker
+    const startWorker = performance.now()
     // extrai dados do job
     const { analysisId, userId, images } = job.data
     try {
@@ -110,6 +109,10 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
             confianca: inference.confidence,
             modelo_cnn: inference.cnnModel
         })
+        // finaliza contador de performance do job
+        const endWorker = performance.now()
+        const workerExecTime = endWorker - startWorker
+        console.log(`>> Job ${job.id} foi completado em ${workerExecTime} ms`)
     } catch (error) {
         console.error(`>> Erro ao processar job ${job.id} : ${error.message}`)
     }
@@ -121,10 +124,6 @@ imageWorker.on('completed', async (job) => {
     const completeAnaluysis = await analysisService.update(analysisId, {
         status: 'finalizada'
     })
-    // finaliza contador da execução do worker
-    const endWorker = performance.now()
-    const workerExecTime = endWorker - startWorker
-    console.log(`>> Job ${job.id} foi completado em ${workerExecTime} ms`)
 })
 
 imageWorker.on('failed', async (job, err) => {
