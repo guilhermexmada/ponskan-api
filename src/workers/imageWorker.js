@@ -7,8 +7,6 @@ import processedService from '../services/processedService.js'
 import cnnService from '../services/cnnService.js'
 import classificationService from '../services/classificationService.js'
 import analysisService from '../services/analysisService.js'
-import { timeStamp } from 'console'
-import { buffer } from 'stream/consumers'
 import { performance } from 'node:perf_hooks'
 
 const imageWorker = new Worker('analysis-queue', async (job) => {
@@ -21,23 +19,23 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
         let analysisObject = []
 
         for (const image of images) {
-            // envia buffer serializado para pipeline de pré-processamento
+            // envia buffer serializado para pré-processamento
             const originalBuffer = Buffer.from(image.buffer.data)
             const processedBuffer = await sharpPipeline.preProcess(originalBuffer)
 
-            // salva temporariamente buffer processado 
+            // salva buffers temporariamente
             const tempProcessedPath = await storageService.save(
                 processedBuffer,
                 `${analysisId}`,
                 '.webp'
             )
 
-            // salva temporariamente buffer original
             const tempOriginalPath = await storageService.save(
                 originalBuffer,
                 `${analysisId}`,
                 '.webp'
             )
+
             // monta objeto para envio à CNN
             analysisObject.push({
                 original: {
@@ -70,7 +68,7 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
         const inference = await cnnService.simulate(analysisId, analysisObject)
         console.log(`>> Análise ${analysisId} classificada com sucesso`)
 
-        // // finaliza contador da execução da CNN
+        // finaliza contador da execução da CNN
         const endCNN = performance.now()
 
         for (const object of analysisObject) {
@@ -137,7 +135,5 @@ imageWorker.on('failed', async (job, err) => {
 
 // imageWorker.on('ready', () => console.log('Worker conectado ao Redis e pronto!'));
 // imageWorker.on('active', (job) => console.log(`Job ${job.id} iniciou processamento`));
-// imageWorker.on('completed', (job) => console.log(`Job ${job.id} finalizado com sucesso`));
-// imageWorker.on('failed', (job, err) => console.error(`Job ${job.id} falhou: ${err.message}`));
 
 export default imageWorker

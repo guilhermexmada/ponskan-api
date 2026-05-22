@@ -7,9 +7,9 @@ import { fn, col, literal } from 'sequelize'
 
 class AnalysisService {
     async create(userId, files) {
-        // cria entidade pai
+        // cria entidade pai 'pendente'
         const analysis = await Analise.create({ id_usuario: userId })
-        // prepara dados para fila do BullMQ: ids + buffer + metadados
+        // prepara dados do job
         const jobData = {
             analysisId: analysis.id,
             userId: userId,
@@ -21,7 +21,7 @@ class AnalysisService {
             }))
         }
 
-        // adiciona job à fila de processamento (Sharp + CNN + Sequelize)
+        // adiciona job à fila
         await imageQueue.add('analysis-job', jobData, {
             attempts: 3,
             backoff: {
