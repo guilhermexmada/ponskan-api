@@ -23,7 +23,7 @@ class AnalysisController {
             // retorna análise 'pendente', dispara fila de processamento paralela
             const result = await analysisService.create(userId, files)
 
-            return new APIResponse(res, 'Análise iniciada', 201, result)
+            return new APIResponse(res, 'Análise iniciada', 202, result)
         } catch (error) {
             next(error)
         }

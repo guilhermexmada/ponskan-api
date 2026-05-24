@@ -3,8 +3,10 @@ import AuthService from '../services/authService.js'
 import AppError from '../utils/appError.js'
 import APIResponse from '../utils/apiResponse.js'
 import validator from 'validator'
+import bcrypt from 'bcrypt'
 
 class UserController {
+    // cadastra usuário
     async createUser(req, res, next) {
         try {
             const { name, email, password, phone, birthDate, accessType, address, cnpj, highSchool, course } = req.body
@@ -32,7 +34,6 @@ class UserController {
             // gera token de autenticação
             const token = await AuthService.generateToken(user.id, user.email)
 
-            // monta objeto de resposta
             const result = {
                 token: token,
                 user: {
@@ -47,6 +48,35 @@ class UserController {
             next(error)
         }
     }
+    // loga usuário com email e senha
+    async loginUser(req, res, next) {
+        try {
+            const { email, password } = req.body
+
+            if (!email || !password) {
+                throw new AppError('Campos obrigatórios não preenchidos', 400)
+            }
+
+            const login = await AuthService.login(email, password)
+            
+            const token = login.token
+            const user = login.user
+
+            const result = {
+                token: token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email
+                }
+            }
+            
+            return new APIResponse(res, 'Login realizado com sucesso', 200, result)
+        } catch (error) {
+            next(error)
+        }
+    }
+    // consulta usuário por ID
     async getUser(req, res, next) {
         try {
             const id = req.params.id
