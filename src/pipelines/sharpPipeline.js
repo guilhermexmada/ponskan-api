@@ -1,8 +1,8 @@
 import sharp from 'sharp'
 
 class SharpPipeline {
+    // pré-processa fotos
     async preProcess(buffer) {
-
         let pipeline = await sharp(buffer)
 
         // redimensionamento
@@ -27,12 +27,13 @@ class SharpPipeline {
             compressionLevel: 9
         })
 
-        // output
-        const processedBuffer = pipeline.toBuffer()
-        return processedBuffer
+        // retorna buffer tratado
+        const output = pipeline.toBuffer()
+        return output
     }
+    // simula data augmentation
     async simulateTraining(buffer) {
-        // simula data augmentation
+        // monta array com 4 variações por imagem processada
         const variations = [
             // original padronizada
             sharp(buffer).resize(224, 224).rotate(),
@@ -46,19 +47,20 @@ class SharpPipeline {
             // rotação aleatória
             sharp(buffer).resize(224, 224).rotate(45)
         ]
-        // simula normalização
-        const finalImages = await Promise.all(variations.map(v =>
-            // v.grayscale()
-            //     .normalise()
+
+        const output = await Promise.all(variations.map(v =>
             v.removeAlpha()
                 .toColorspace('srgb')
                 .toBuffer()
         ))
 
-        return finalImages
+        return output
     }
+    // simula classificação
     async simulateClassification(buffers) {
         const probabilities = []
+
+        // para cada variação de uma imagem processada
         for (const buffer of buffers) {
             // obtém pixels brutos
             const { data, info } = await sharp(buffer)
@@ -76,20 +78,18 @@ class SharpPipeline {
                 const g = data[i + 1]
                 const b = data[i + 2]
 
-                // luminância percebida (padrão BT.601)
+                // considera luminância (padrão BT.601)
                 const luminance = 0.299 * r + 0.587 * g + 0.114 * b
 
-                // pixel é considerado "escuro" se luminância baixa
+                // conta pixel "escuro" se luminância for baixa
                 if (luminance < 60) {
                     count++
                 }
             }
 
-            // simula probabilidade
-            // console.log('total de pixels: ', totalPixels)
-            // console.log('pixels escuros: ', count)
+            // simula probabilidade por variação
             const density = (count / totalPixels) * 100
-            const prob = Math.min(density / 2, 1) // normaliza entre 0 e 1, considera 5% = alta probabilidade, 1 = trava de segurança (clamping)
+            const prob = Math.min(density / 2, 1) // normaliza entre 0 e 1, considera 2% = alta probabilidade, 1 = trava de segurança (clamping)
             probabilities.push(prob)
         }
 
