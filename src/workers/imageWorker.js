@@ -1,6 +1,6 @@
 import { Worker } from 'bullmq'
 import { redisConfig } from '../config/redis-config.js'
-import sharpPipeline from '../pipelines/sharpPipeline.js'
+import preProcess from '../pipelines/preProcess.js'
 import storageService from '../utils/storage/storageService.js'
 import imagesService from '../services/imagesService.js'
 import processedService from '../services/processedService.js'
@@ -23,7 +23,7 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
         for (const image of images) {
             // envia buffer serializado para pré-processamento
             const originalBuffer = Buffer.from(image.buffer.data)
-            const processedBuffer = await sharpPipeline.preProcess(originalBuffer)
+            const processedBuffer = await preProcess.preProcess(originalBuffer)
 
             // salva buffers temporariamente
             const tempProcessedPath = await storageService.save(

@@ -1,5 +1,4 @@
-import sharp from "sharp";
-import sharpPipeline from "../pipelines/sharpPipeline.js"
+import simulateCNN from '../pipelines/simulateCNN.js'
 
 // simula inferência da rede neural
 class CNNService {
@@ -18,8 +17,8 @@ class CNNService {
             let scores = [];
             for (const object of data) {
                 const buffer = object.processed.buffer
-                const variations = await sharpPipeline.simulateTraining(buffer) // simula data augmentation
-                const probability = await sharpPipeline.simulateClassification(variations) // simula classificação
+                const variations = await simulateCNN.simulateTraining(buffer) // simula data augmentation
+                const probability = await simulateCNN.simulateClassification(variations) // simula classificação
                 scores.push(probability)
             }
 
