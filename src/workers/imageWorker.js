@@ -1,13 +1,14 @@
 import { Worker } from 'bullmq'
 import { redisConfig } from '../config/redis-config.js'
-import preProcess from '../pipelines/preProcess.js'
-import storageService from '../utils/storage/storageService.js'
-import imagesService from '../services/imagesService.js'
-import processedService from '../services/processedService.js'
-import cnnService from '../services/cnnService.js'
-import classificationService from '../services/classificationService.js'
-import analysisService from '../services/analysisService.js'
 import { performance } from 'node:perf_hooks'
+import * as services from '../services/index.js'
+import storageService from '../utils/storage/storageService.js'
+import preProcess from '../pipelines/preProcess.js'
+// import imagesService from '../services/imagesService.js'
+// import processedService from '../services/processedService.js'
+// import cnnService from '../services/cnnService.js'
+// import classificationService from '../services/classificationService.js'
+// import analysisService from '../services/analysisService.js'
 
 const imageWorker = new Worker('analysis-queue', async (job) => {
     try {
@@ -63,7 +64,7 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
         const startCNN = performance.now()
 
         // aguarda inferência na CNN
-        const inference = await cnnService.simulate(analysisId, analysisObject)
+        const inference = await services.cnnService.simulate(analysisId, analysisObject)
         console.log(`>> Análise ${analysisId} classificada com sucesso`)
 
         // finaliza contador da CNN
@@ -78,14 +79,14 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
             const processedPath = await storageService.move(processedMeta.tempPath, 'processed', analysisId, userId)
             const originalPath = await storageService.move(imageMeta.tempPath, 'uploads', analysisId, userId)
             // cadastra imagens no banco
-            const image = await imagesService.create({
+            const image = await services.imagesService.create({
                 id_analise: analysisId,
                 nome: imageMeta.name,
                 caminho: originalPath,
                 tipo_mime: imageMeta.mimeType,
                 tamanho: imageMeta.size
             })
-            const processed = await processedService.create({
+            const processed = await services.processedService.create({
                 id_imagem: image.id,
                 nome: imageMeta.name,
                 caminho: processedPath,
@@ -100,7 +101,7 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
 
         // cadastra classificação no banco
         const cnnExecTime = endCNN - startCNN
-        const classification = await classificationService.create({
+        const classification = await services.classificationService.create({
             id_analise: analysisId,
             tempo_execucao: cnnExecTime,
             classe: inference.preDiagnosis,
@@ -121,7 +122,7 @@ imageWorker.on('completed', async (job) => {
     try {
         const { analysisId } = job.data
         // atualiza análise no banco
-        const completeAnaluysis = await analysisService.update(analysisId, {
+        const completeAnaluysis = await services.analysisService.update(analysisId, {
             status: 'finalizada'
         })
     } catch (error) {
@@ -134,7 +135,7 @@ imageWorker.on('failed', async (job, err) => {
     try {
         const { analysisId } = job.data
         // atualiza análise no banco
-        const cancelAnalysis = await analysisService.update(analysisId, {
+        const cancelAnalysis = await services.analysisService.update(analysisId, {
             status: 'cancelada'
         })
     } catch (error) {
