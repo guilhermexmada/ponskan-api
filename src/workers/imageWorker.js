@@ -4,11 +4,6 @@ import { performance } from 'node:perf_hooks'
 import * as services from '../services/index.js'
 import storageService from '../utils/storage/storageService.js'
 import preProcess from '../pipelines/preProcess.js'
-// import imagesService from '../services/imagesService.js'
-// import processedService from '../services/processedService.js'
-// import cnnService from '../services/cnnService.js'
-// import classificationService from '../services/classificationService.js'
-// import analysisService from '../services/analysisService.js'
 
 const imageWorker = new Worker('analysis-queue', async (job) => {
     try {
@@ -114,6 +109,7 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
         console.log(`>> Job ${job.id} foi completado em ${workerExecTime} ms`)
     } catch (error) {
         console.error(`>> Erro ao processar job ${job.id} : ${error.message}`)
+        throw error // informa BullMQ que job falhou -> após todas as tentativas, chama job.on('failed')
     }
 }, { connection: redisConfig })
 

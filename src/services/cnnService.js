@@ -40,6 +40,7 @@ class CNNService {
 
         } catch (error) {
             console.error(`>> Erro ao classificar análise: ${error}`)
+            throw error // devolve erro pro Worker
         }
     }
 }
