@@ -118,7 +118,7 @@ imageWorker.on('completed', async (job) => {
     try {
         const { analysisId } = job.data
         // atualiza análise no banco
-        const completeAnaluysis = await services.analysisService.update(analysisId, {
+        const completeAnalysis = await services.analysisService.update(analysisId, {
             status: 'finalizada'
         })
     } catch (error) {
