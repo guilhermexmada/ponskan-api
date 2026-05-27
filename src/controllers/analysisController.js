@@ -84,10 +84,6 @@ class AnalysisController {
 
             const analysisDetails = await analysisService.getDetails(analysisId)
 
-            if(!analysisDetails){
-                throw new AppError('Nenhum relatório foi encontrado para a análise referente', 404)
-            }
-
             const result = analysisDetails
 
             return new APIResponse(res, 'Relatório da Análise gerado com sucesso', 200, result)

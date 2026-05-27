@@ -114,11 +114,12 @@ class AnalysisService {
         return analysisList
     }
     // monta relatório completo da análise
-    async getDetails(analysisId){
-        if(!analysisId){
+    async getDetails(analysisId) {
+        if (!analysisId) {
             throw new AppError('Erro ao enviar ID da análise referente', 400)
         }
-        const analysisDetails = await Analise.findAll({
+
+        const analysisDetails = await Analise.findByPk(analysisId, {
             attributes: [
                 'id',
                 'status',
@@ -133,10 +134,20 @@ class AnalysisService {
                 {
                     model: Classificacao,
                     as: 'classificacao',
-                    attributes: ['classe', 'confianca', 'tempo_execucao', 'modelo_cnn']
+                    attributes: [
+                        'classe',
+                        'confianca',
+                        'tempo_execucao',
+                        'modelo_cnn'
+                    ]
                 }
-            ],
+            ]
         })
+
+        if (!analysisDetails) {
+            throw new AppError('Análise não encontrada', 404)
+        }
+
         return analysisDetails
     }
 }
