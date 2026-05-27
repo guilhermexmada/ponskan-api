@@ -66,13 +66,9 @@ class AnalysisService {
 
         const analysis = await Analise.findByPk(analysisId)
 
-        if (!analysis) {
-            throw new AppError('Nenhuma análise foi encontrada', 404)
-        }
-
         return analysis
     }
-    // consulta relatório completo e paginado da análise
+    // monta lista de análises com paginação
     async getAll(userId, page = 1) {
         if (!userId) {
             throw new AppError('Erro ao enviar ID do usuário referente', 400)
@@ -101,7 +97,7 @@ class AnalysisService {
                 {
                     model: Classificacao,
                     as: 'classificacao',
-                    attributes: ['id', 'classe', 'confianca', 'tempo_execucao', 'createdAt']
+                    attributes: ['classe', 'confianca']
                 },
                 {
                     model: Imagem,
@@ -116,6 +112,43 @@ class AnalysisService {
             offset
         })
         return analysisList
+    }
+    // monta relatório completo da análise
+    async getDetails(analysisId) {
+        if (!analysisId) {
+            throw new AppError('Erro ao enviar ID da análise referente', 400)
+        }
+
+        const analysisDetails = await Analise.findByPk(analysisId, {
+            attributes: [
+                'id',
+                'status',
+                'createdAt'
+            ],
+            include: [
+                {
+                    model: Imagem,
+                    as: 'imagem',
+                    attributes: ['caminho']
+                },
+                {
+                    model: Classificacao,
+                    as: 'classificacao',
+                    attributes: [
+                        'classe',
+                        'confianca',
+                        'tempo_execucao',
+                        'modelo_cnn'
+                    ]
+                }
+            ]
+        })
+
+        if (!analysisDetails) {
+            throw new AppError('Análise não encontrada', 404)
+        }
+
+        return analysisDetails
     }
 }
 

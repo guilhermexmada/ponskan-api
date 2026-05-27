@@ -19,7 +19,7 @@ const Classificacao = connection.define('classificacoes', {
         type: DataTypes.INTEGER,
     },
     classe:{
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     confianca: {

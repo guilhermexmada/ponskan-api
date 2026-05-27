@@ -1,5 +1,4 @@
-import sharp from "sharp";
-import sharpPipeline from "../pipelines/sharpPipeline.js"
+import simulateCNN from '../pipelines/simulateCNN.js'
 
 // simula inferência da rede neural
 class CNNService {
@@ -18,20 +17,20 @@ class CNNService {
             let scores = [];
             for (const object of data) {
                 const buffer = object.processed.buffer
-                const variations = await sharpPipeline.simulateTraining(buffer) // simula data augmentation
-                const probability = await sharpPipeline.simulateClassification(variations) // simula classificação
+                const variations = await simulateCNN.simulateTraining(buffer) // simula data augmentation
+                const probability = await simulateCNN.simulateClassification(variations) // simula classificação
                 scores.push(probability)
             }
 
             // média final das probabilidades
             const finalScore = scores.reduce((a, b) => a + b, 0) / scores.length
             // define limiar e classe binária
-            const preDiagnosis = finalScore >= 0.8 ? 'true' : 'false'
+            const preDiagnosis = finalScore >= 0.8 ? 1 : 0 // 1/true/infectada; 0/false/saudavel
             // cálculo da confiança por probabilidade complementar
-            const confidence = preDiagnosis === 'true' ? finalScore : (1 - finalScore)
+            const confidence = preDiagnosis === 1 ? finalScore : (1 - finalScore)
 
             await new Promise(resolve => setTimeout(resolve, 5000)) // delay artificial
-            console.log(`Existe ${confidence * 100}% de chance da amostra ser ${preDiagnosis === 'true' ? 'infectada' : 'saudável'}`)
+            console.log(`Existe ${confidence * 100}% de chance da amostra ser ${preDiagnosis === 1 ? 'infectada' : 'saudável'}`)
 
             return {
                 confidence,
@@ -41,6 +40,7 @@ class CNNService {
 
         } catch (error) {
             console.error(`>> Erro ao classificar análise: ${error}`)
+            throw error // devolve erro pro Worker
         }
     }
 }

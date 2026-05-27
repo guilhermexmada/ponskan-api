@@ -39,22 +39,21 @@ class AnalysisController {
 
             const analysis = await analysisService.get(analysisId)
 
+            if(!analysis){
+                throw new AppError('Nenhuma análise foi encontrada', 404)
+            }
+
+            const result = {
+                analysisId: analysis.id,
+                status: analysis.status
+            }
+
             if (analysis.status === 'pendente') {
-                return new APIResponse(res, 'A análise ainda está sendo processada', 200, analysis)
+                return new APIResponse(res, 'A análise ainda está sendo processada', 200, result)
             } else if (analysis.status === 'cancelada') {
-                return new APIResponse(res, 'A análise foi cancelada devido a algum erro', 500, analysis)
+                return new APIResponse(res, 'A análise foi cancelada devido a algum erro', 500, result)
             } else if (analysis.status === 'finalizada') {
-                // se estiver 'finalizada', retorna relatório completo
-                const images = await imagesService.getByAnalysis(analysisId)
-                const classification = await classificationService.getByAnalysis(analysisId)
-
-                const result = {
-                    analysis,
-                    images,
-                    classification
-                }
-
-                return new APIResponse(res, 'Relatório da Análise consultado com sucesso', 200, result)
+                return new APIResponse(res, 'A análise foi concluída com sucesso', 200, result)
             }
         } catch (error) {
             next(error)
@@ -65,12 +64,30 @@ class AnalysisController {
         try {
             const loggedUser = req.loggedUser
             const userId = loggedUser.id
+
             // requer número da página
             const page = req.query.page || 1
 
             const analysisList = await analysisService.getAll(userId, page)
+
             const result = analysisList
+
             return new APIResponse(res, 'Listagem de Análises realizada com sucesso', 200, result)
+        } catch (error) {
+            next(error)
+        }
+    }
+    // consulta relatório completo de uma análise
+    async getAnalysisDetails(req, res, next){
+        try {
+            const analysisId = req.params.id
+
+            const analysisDetails = await analysisService.getDetails(analysisId)
+
+            const result = analysisDetails
+
+            return new APIResponse(res, 'Relatório da Análise gerado com sucesso', 200, result)
+
         } catch (error) {
             next(error)
         }
