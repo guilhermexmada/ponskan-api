@@ -13,7 +13,7 @@ class AnalysisController {
             const files = req.files
 
             if (!userId) {
-                throw new AppError('Usuário não autenticado', 403)
+                throw new AppError('Usuário não autenticado', 401)
             }
 
             if (!files || files.length === 0) {
