@@ -20,7 +20,7 @@ const Authorization = async (req, res, next) => {
 
         // Soft delete check
         const usuario = await Usuario.findByPk(decoded.id)
-        console.log(usuario)
+        // console.log(usuario)
         if (!usuario) {
             return next(new AppError('Acesso não autorizado: usuário desativado ou inexistente', 401))
         }
