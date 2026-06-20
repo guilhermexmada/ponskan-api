@@ -5,13 +5,15 @@ import AppError from '../utils/appError.js'
 import APIResponse from '../utils/apiResponse.js'
 
 class AuthService {
+    // realiza login com email e senha
     async login(email, password) {
         if (!email || !password) {
             throw new AppError('Erro ao enviar e-mail ou senha', 400)
         }
 
-        // verifica se usuário existe e busca senha+id
+        // busca dados do usuário (id, email, nome, senha)
         const user = await UserService.findByEmail(email)
+
         if (!user) {
             throw new AppError('Suas credenciais são inválidas: verifique e tente novamente', 401)
         }
@@ -23,6 +25,7 @@ class AuthService {
         if (!isMatch) {
             throw new AppError('Suas credenciais são inválidas: verifique e tente novamente', 401)
         }
+
         const token = await this.generateToken(user.id, user.email)
         
         return {
@@ -30,19 +33,21 @@ class AuthService {
             user: user
         }
     }
+    // hasheia senha
     async hashPassword(password) {
         const salt = await bcrypt.genSaltSync(10)
         const hash = await bcrypt.hashSync(password, salt)
         return hash
     }
+    // gera token
     async generateToken(id, email) {
         try {
             const token = jwt.sign(
-                { id, email }, process.env.JWT_SECRET, { expiresIn: '1h' }
+                { id, email }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN }
             )
             return token
         } catch (error) {
-            throw new AppError('Não foi possível gerar o token de autenticação', 400)
+            throw new AppError('Não foi possível gerar o token de autenticação', 500)
         }
     }
 }

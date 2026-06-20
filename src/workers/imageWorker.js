@@ -1,44 +1,38 @@
 import { Worker } from 'bullmq'
 import { redisConfig } from '../config/redis-config.js'
-import sharpPipeline from '../pipelines/sharpPipeline.js'
-import storageService from '../utils/storage/storageService.js'
-import imagesService from '../services/imagesService.js'
-import processedService from '../services/processedService.js'
-import cnnService from '../services/cnnService.js'
-import classificationService from '../services/classificationService.js'
-import analysisService from '../services/analysisService.js'
-import { timeStamp } from 'console'
-import { buffer } from 'stream/consumers'
 import { performance } from 'node:perf_hooks'
-
-// inicia contador da execução do worker
-const startWorker = performance.now()
+import * as services from '../services/index.js'
+import storageService from '../utils/storage/storageService.js'
+import preProcess from '../pipelines/preProcess.js'
 
 const imageWorker = new Worker('analysis-queue', async (job) => {
-    // extrai dados do job
-    const { analysisId, userId, images } = job.data
     try {
-        console.log(`>> Processando Análise ${analysisId} ... Tentativa ${job.attemptsMade + 1}`)
+        // dispara contador do worker
+        const startWorker = performance.now()
+        // extrai dados do job
+        const { analysisId, userId, images } = job.data
         let analysisObject = []
 
-        for (const image of images) {
-            // envia buffer serializado para pipeline de pré-processamento
-            const originalBuffer = Buffer.from(image.buffer.data)
-            const processedBuffer = await sharpPipeline.preProcess(originalBuffer)
+        console.log(`>> Processando Análise ${analysisId} ... Tentativa ${job.attemptsMade + 1}`)
 
-            // salva temporariamente buffer processado 
+        // para cada foto
+        for (const image of images) {
+            // envia buffer serializado para pré-processamento
+            const originalBuffer = Buffer.from(image.buffer.data)
+            const processedBuffer = await preProcess.preProcess(originalBuffer)
+
+            // salva buffers temporariamente
             const tempProcessedPath = await storageService.save(
                 processedBuffer,
                 `${analysisId}`,
                 '.webp'
             )
-
-            // salva temporariamente buffer original
             const tempOriginalPath = await storageService.save(
                 originalBuffer,
                 `${analysisId}`,
                 '.webp'
             )
+
             // monta objeto para envio à CNN
             analysisObject.push({
                 original: {
@@ -55,90 +49,99 @@ const imageWorker = new Worker('analysis-queue', async (job) => {
                     metadata: {
                         tempPath: tempProcessedPath,
                         mimeType: 'image/webp',
-                        size: processedBuffer.length,
-                        resolution: '[224,224]',
-                        colorSpace: 'sRGB',
-                        time: Date.now()
+                        size: processedBuffer.length
                     }
                 }
             })
         }
 
-        // inicia contador da execução da CNN
+        // inicia contador da CNN
         const startCNN = performance.now()
 
         // aguarda inferência na CNN
-        const inference = await cnnService.simulate(analysisId, analysisObject)
+        const inference = await services.cnnService.simulate(analysisId, analysisObject)
         console.log(`>> Análise ${analysisId} classificada com sucesso`)
 
-        // // finaliza contador da execução da CNN
+        // finaliza contador da CNN
         const endCNN = performance.now()
 
+        // para cada conjunto de foto + versões processadas
         for (const object of analysisObject) {
             // separa imagens e versões processadas
-            const processedObjectMeta = object.processed.metadata
-            const originalObjectMeta = object.original.metadata
+            const processedMeta = object.processed.metadata
+            const imageMeta = object.original.metadata
             // move arquivos temporários para pastas definitivas
-            const processedPath = await storageService.move(processedObjectMeta.tempPath, 'processed', analysisId, userId)
-            const originalPath = await storageService.move(originalObjectMeta.tempPath, 'uploads', analysisId, userId)
-            // salva imagens no banco
-            const image = await imagesService.create({
+            const processedPath = await storageService.move(processedMeta.tempPath, 'processed', analysisId, userId)
+            const originalPath = await storageService.move(imageMeta.tempPath, 'uploads', analysisId, userId)
+            // cadastra imagens no banco
+            const image = await services.imagesService.create({
                 id_analise: analysisId,
-                nome: originalObjectMeta.name,
+                nome: imageMeta.name,
                 caminho: originalPath,
-                tipo_mime: originalObjectMeta.mimeType,
-                tamanho: originalObjectMeta.size
+                tipo_mime: imageMeta.mimeType,
+                tamanho: imageMeta.size
             })
-            const processed = await processedService.create({
+            const processed = await services.processedService.create({
                 id_imagem: image.id,
-                nome: originalObjectMeta.name,
+                nome: imageMeta.name,
                 caminho: processedPath,
-                tipo_mime: processedObjectMeta.mimeType,
-                tamanho: processedObjectMeta.size
+                tipo_mime: processedMeta.mimeType,
+                tamanho: processedMeta.size
             })
         }
+
         // limpa pasta temporária (após o loop)
         await storageService.cleanTemp(`${analysisId}`)
         console.log(`>> Pasta temporária limpa com sucesso`)
 
-        // salva classificação no banco
+        // cadastra classificação no banco
         const cnnExecTime = endCNN - startCNN
-        const classification = await classificationService.create({
+        const classification = await services.classificationService.create({
             id_analise: analysisId,
             tempo_execucao: cnnExecTime,
             classe: inference.preDiagnosis,
             confianca: inference.confidence,
-            modelo_cnn: inference.cnnModel
+            modelo_cnn: inference.model
         })
+        // finaliza contador de performance do job
+        const endWorker = performance.now()
+        const workerExecTime = endWorker - startWorker
+        console.log(`>> Job ${job.id} foi completado em ${workerExecTime} ms`)
     } catch (error) {
         console.error(`>> Erro ao processar job ${job.id} : ${error.message}`)
+        throw error // informa BullMQ que job falhou -> após todas as tentativas, chama job.on('failed')
     }
 }, { connection: redisConfig })
 
+// job concluído
 imageWorker.on('completed', async (job) => {
-    const { analysisId } = job.data
-    // atualiza análise no banco
-    const completeAnaluysis = await analysisService.update(analysisId, {
-        status: 'finalizada'
-    })
-    // finaliza contador da execução do worker
-    const endWorker = performance.now()
-    const workerExecTime = endWorker - startWorker
-    console.log(`>> Job ${job.id} foi completado em ${workerExecTime} ms`)
+    try {
+        const { analysisId } = job.data
+        // atualiza análise no banco
+        const completeAnalysis = await services.analysisService.update(analysisId, {
+            status: 'finalizada'
+        })
+    } catch (error) {
+        console.error('>> Erro ao atualizar progresso da análise: ', error)
+    }
 })
 
+// job falhou
 imageWorker.on('failed', async (job, err) => {
-    const { analysisId } = job.data
-    // atualiza análise no banco
-    const cancelAnalysis = await analysisService.update(analysisId, {
-        status: 'cancelada'
-    })
-    console.error(`>> Job ${job.id} falhou`)
+    try {
+        const { analysisId } = job.data
+        // atualiza análise no banco
+        const cancelAnalysis = await services.analysisService.update(analysisId, {
+            status: 'cancelada'
+        })
+    } catch (error) {
+        console.error('>> Erro ao atualizar progresso da análise: ', error)
+    } finally {
+        console.error(`>> Job ${job.id} falhou: ${err.message}`)
+    }
 })
 
 // imageWorker.on('ready', () => console.log('Worker conectado ao Redis e pronto!'));
 // imageWorker.on('active', (job) => console.log(`Job ${job.id} iniciou processamento`));
-// imageWorker.on('completed', (job) => console.log(`Job ${job.id} finalizado com sucesso`));
-// imageWorker.on('failed', (job, err) => console.error(`Job ${job.id} falhou: ${err.message}`));
 
 export default imageWorker

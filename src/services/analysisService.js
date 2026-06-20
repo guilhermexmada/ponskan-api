@@ -6,10 +6,12 @@ import Imagem from '../models/Imagem.js'
 import { fn, col, literal } from 'sequelize'
 
 class AnalysisService {
+    // cadastra análise e dispara fila assíncrona de classificação
     async create(userId, files) {
-        // cria entidade pai
+        // cadastra análise 'pendente'
         const analysis = await Analise.create({ id_usuario: userId })
-        // prepara dados para fila do BullMQ: ids + buffer + metadados
+
+        // prepara dados do job
         const jobData = {
             analysisId: analysis.id,
             userId: userId,
@@ -21,7 +23,7 @@ class AnalysisService {
             }))
         }
 
-        // adiciona job à fila de processamento (Sharp + CNN + Sequelize)
+        // adiciona job à fila
         await imageQueue.add('analysis-job', jobData, {
             attempts: 3,
             backoff: {
@@ -34,32 +36,43 @@ class AnalysisService {
 
         return analysis
     }
+    // atualiza estado de progresso da análise
     async update(analysisId, data) {
         if (!analysisId) {
             throw new AppError('Erro ao enviar ID da análise referente', 400)
         }
+
         if (!data) {
             throw new AppError('Erro ao enviar dados para atualização da análise', 400)
         }
+
         const updatedAnalysis = await Analise.update(data, {
             where: {
                 id: analysisId
             }
         })
+
         return {
             id: analysisId,
             userId: updatedAnalysis.id_usuario,
             status: updatedAnalysis.status
         }
     }
+    // consulta análise por ID
     async get(analysisId) {
         if (!analysisId) {
             throw new AppError('Erro ao enviar ID da análise referente', 400)
         }
+
         const analysis = await Analise.findByPk(analysisId)
+
         return analysis
     }
+    // monta lista de análises com paginação
     async getAll(userId, page = 1) {
+        if (!userId) {
+            throw new AppError('Erro ao enviar ID do usuário referente', 400)
+        }
         // parâmetros de paginação
         const limit = 20
         const offset = (page - 1) * limit
@@ -84,7 +97,7 @@ class AnalysisService {
                 {
                     model: Classificacao,
                     as: 'classificacao',
-                    attributes: ['id', 'classe', 'confianca', 'tempo_execucao', 'createdAt']
+                    attributes: ['classe', 'confianca']
                 },
                 {
                     model: Imagem,
@@ -99,6 +112,43 @@ class AnalysisService {
             offset
         })
         return analysisList
+    }
+    // monta relatório completo da análise
+    async getDetails(analysisId) {
+        if (!analysisId) {
+            throw new AppError('Erro ao enviar ID da análise referente', 400)
+        }
+
+        const analysisDetails = await Analise.findByPk(analysisId, {
+            attributes: [
+                'id',
+                'status',
+                'createdAt'
+            ],
+            include: [
+                {
+                    model: Imagem,
+                    as: 'imagem',
+                    attributes: ['caminho']
+                },
+                {
+                    model: Classificacao,
+                    as: 'classificacao',
+                    attributes: [
+                        'classe',
+                        'confianca',
+                        'tempo_execucao',
+                        'modelo_cnn'
+                    ]
+                }
+            ]
+        })
+
+        if (!analysisDetails) {
+            throw new AppError('Análise não encontrada', 404)
+        }
+
+        return analysisDetails
     }
 }
 

@@ -5,16 +5,24 @@ import healthRoutes from './src/routes/healthRoutes.js'
 import userRoutes from './src/routes/userRoutes.js'
 import analysisRoutes from './src/routes/analysisRoutes.js'
 import errorMiddleware from './src/middlewares/errorMiddleware.js'
+import { fileURLToPath } from 'url'
+import path from 'path'
 
 const app = express()
 
-// define middleware primário para segurança das requisições
-app.use(cors(corsOptions))
+// recria _dirname no padrão module
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-// configurações express
+// middleware primário + configurações express
+app.use(cors(corsOptions))
 app.use(express.static('public'))
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
+
+// libera uso da pasta storage
+const storagePath = path.resolve(__dirname, 'storage');
+app.use('/storage', express.static(storagePath));
 
 // rotas
 app.get('/', (req, res) => {

@@ -13,11 +13,10 @@ const Usuario = connection.define('usuarios', {
     },
     email: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
     },
     senha: {
         type: DataTypes.STRING,
-        unique: true,
         allowNull: false,
     },
     telefone: {
@@ -47,7 +46,14 @@ const Usuario = connection.define('usuarios', {
     {
         tableName: 'usuarios',
         timestamps: true,
-        paranoid: true
+        paranoid: true,
+        indexes: [{
+            // cria índice único composto para permitir recadastro de e-mail após deleção lógica
+            // se (email, deletedAt = null), acha e não permite recadastro
+            // se (email, deletedAt = timestamp), não acha e permite recadastro   
+            unique: true,
+            fields: ['email', 'deletedAt']
+        }]
     }
 )
 
