@@ -2,11 +2,13 @@ import { Queue } from 'bullmq'
 import { createRedisConnection } from '../config/redis-config.js'
 
 let imageQueue = null
+let lastErrorCode = null
+let errorCount = 0
 
 function initImageQueue() {
     // se já foi iniciada
     if (imageQueue) {
-        console.log(`>> [imageQueue] Queue rodando`)
+        console.log(`>> [BullMQ] ImageQueue rodando`)
         return imageQueue
     }
 
@@ -22,7 +24,13 @@ function initImageQueue() {
 
     // erro de conexão do bullmq
     imageQueue.on('error', (error) => {
-        console.error('>> [ImageQueue] Erro de conexão com Redis: ', error.code)
+        if(lastErrorCode != error.code){
+            lastErrorCode = error.code
+            console.error('>> [BullMQ] Erro de conexão do ImageQueue com Redis: ', error.code)
+        } else if(lastErrorCode == error.code && errorCount >= 10){
+                console.error(`>> [BullMQ] Múltiplos erros de conexão do ImageQueue com Redis: ${error.code} x${errorCount}`)
+        }
+        errorCount++
     })
 
     return imageQueue

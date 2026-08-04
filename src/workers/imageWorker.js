@@ -6,11 +6,13 @@ import storageService from '../utils/storage/storageService.js'
 import preProcess from '../pipelines/preProcess.js'
 
 let imageWorker = null
+let lastErrorCode = null
+let errorCount = 0
 
 function initImageWorker() {
     // se já foi iniciado
     if (imageWorker) {
-        console.log(`>> [ImageWorker] Worker rodando`)
+        console.log(`>> [BullMQ] ImageWorker rodando`)
         return imageWorker
     }
     // se não, cria conexão Redis exclusiva
@@ -27,7 +29,7 @@ function initImageWorker() {
             const { analysisId, userId, images } = job.data
             let analysisObject = []
 
-            console.log(`>> Processando Análise ${analysisId} ... Tentativa ${job.attemptsMade + 1}`)
+            console.log(`>> [BullMQ] Processando Análise ${analysisId} ... Tentativa ${job.attemptsMade + 1}`)
 
             // para cada foto
             for (const image of images) {
@@ -74,7 +76,7 @@ function initImageWorker() {
 
             // aguarda inferência na CNN
             const inference = await services.cnnService.simulate(analysisId, analysisObject)
-            console.log(`>> Análise ${analysisId} classificada com sucesso`)
+            console.log(`>> [BullMQ] Análise ${analysisId} classificada com sucesso`)
 
             // finaliza contador da CNN
             const endCNN = performance.now()
@@ -106,7 +108,7 @@ function initImageWorker() {
 
             // limpa pasta temporária (após o loop)
             await storageService.cleanTemp(`${analysisId}`)
-            console.log(`>> Pasta temporária limpa com sucesso`)
+            console.log(`>> [Storage] Pasta temporária limpa com sucesso`)
 
             // cadastra classificação no banco
             const cnnExecTime = endCNN - startCNN
@@ -120,9 +122,9 @@ function initImageWorker() {
             // finaliza contador de performance do job
             const endWorker = performance.now()
             const workerExecTime = endWorker - startWorker
-            console.log(`>> Job ${job.id} foi completado em ${workerExecTime} ms`)
+            console.log(`>> [BullMQ] Job ${job.id} foi completado em ${workerExecTime} ms`)
         } catch (error) {
-            console.error(`>> Erro ao processar job ${job.id} : ${error.message}`)
+            console.error(`>> [BullMQ] Erro ao processar job ${job.id} : ${error.message}`)
             throw error // informa BullMQ que job falhou -> após todas as tentativas, chama job.on('failed')
         }
     }, { connection: workerConnection })
@@ -135,7 +137,7 @@ function initImageWorker() {
                 status: 'finalizada'
             })
         } catch (error) {
-            console.error('>> Erro ao atualizar progresso da análise: ', error)
+            console.error('>> [BullMQ] Erro ao atualizar progresso da análise: ', error)
         }
     })
 
@@ -148,15 +150,21 @@ function initImageWorker() {
                 status: 'cancelada'
             })
         } catch (error) {
-            console.error('>> Erro ao atualizar progresso da análise: ', error)
+            console.error('>> [BullMQ] Erro ao atualizar progresso da análise: ', error)
         } finally {
-            console.error(`>> Job ${job.id} falhou: ${err.message}`)
+            console.error(`>> [BullMQ] Job ${job.id} falhou: ${err.message}`)
         }
     })
 
     // erro de conexão
     imageWorker.on('error', (error) => {
-        console.error('>> [ImageWorker] Erro de conexão com Redis: ', error.code)
+        if(lastErrorCode != error.code){
+            lastErrorCode = error.code
+            console.error('>> [BullMQ] Erro de conexão do ImageWorker com Redis: ', error.code)
+        } else if(lastErrorCode == error.code && errorCount >= 10){
+                console.error(`>> [BullMQ] Múltiplos erros de conexão do ImageWorker com Redis: ${error.code} x${errorCount}`)
+        }
+        errorCount++
     })
 
     return imageWorker
