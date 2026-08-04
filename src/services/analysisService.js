@@ -1,6 +1,6 @@
 import Analise from '../models/Analise.js'
 import AppError from '../utils/appError.js'
-import imageQueue from '../queues/imageQueue.js'
+import initImageQueue from '../queues/imageQueue.js'
 import Classificacao from '../models/Classificacao.js'
 import Imagem from '../models/Imagem.js'
 import { fn, col, literal } from 'sequelize'
@@ -22,6 +22,9 @@ class AnalysisService {
                 size: file.size
             }))
         }
+
+        // instnacia fila de imagens por demanda, e não junto do servidor
+        const imageQueue = initImageQueue()
 
         // adiciona job à fila
         await imageQueue.add('analysis-job', jobData, {

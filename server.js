@@ -1,7 +1,8 @@
 import app from './app.js'
 import { initDatabase } from './src/database/initDB.js'
 import { initStorage } from './src/utils/storage/init.js'
-import imageWorker from './src/workers/imageWorker.js'
+import initImageWorker from './src/workers/imageWorker.js'
+import initImageQueue from './src/queues/imageQueue.js'
 
 const port = process.env.PORT || 4040
 
@@ -16,6 +17,15 @@ async function startServer() {
         const server = app.listen(port, () => {
             console.log(`>> Aplicação iniciada ... Servidor rodando em http://localhost:${port}`)
         })
+
+        // inicia workers
+        try {
+            console.log('>> [Redis] Acordando Workers...')
+            initImageWorker()
+        } catch (error) {
+            console.error('>> [Redis] Erro ao iniciar serviços assíncronos: ', error)
+        }
+
         // tratamento de erros
         // erro conhecido
         server.on('error', (err) => {
@@ -46,6 +56,7 @@ async function startServer() {
                 process.exit(0);
             });
         });
+
     } catch (error) {
         console.error('>> Falha ao iniciar a aplicação: ', error)
         process.exit(1)

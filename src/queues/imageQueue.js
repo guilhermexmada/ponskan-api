@@ -1,8 +1,31 @@
 import { Queue } from 'bullmq'
-import { redisConfig } from '../config/redis-config.js'
+import { createRedisConnection } from '../config/redis-config.js'
 
-const imageQueue = new Queue('analysis-queue', {
-    connection: redisConfig
-})
+let imageQueue = null
 
-export default imageQueue
+function initImageQueue() {
+    // se já foi iniciada
+    if (imageQueue) {
+        console.log(`>> [imageQueue] Queue rodando`)
+        return imageQueue
+    }
+
+    // se não, cria conexão Redis exclusiva
+    const queueConnection = createRedisConnection({
+        maxRetriesPerRequest: null,
+        connectionName: 'ImageQueue'
+    })
+    // instancia uma nova fila do bullmq passando conexão criada
+    imageQueue = new Queue('analysis-queue', {
+        connection: queueConnection,
+    })
+
+    // erro de conexão do bullmq
+    imageQueue.on('error', (error) => {
+        console.error('>> [ImageQueue] Erro de conexão com Redis: ', error.code)
+    })
+
+    return imageQueue
+}
+
+export default initImageQueue
