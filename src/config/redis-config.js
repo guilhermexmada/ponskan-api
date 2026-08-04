@@ -3,7 +3,7 @@ import IORedis from 'ioredis'
 // Factory de conexões com Redis
 function createRedisConnection(customConfig = {}) {
     if (!process.env.REDIS_HOST || !process.env.REDIS_PORT) {
-        console.log('[Redis] Variáveis de ambiente do Redis não foram definidas')
+        console.log('[IORedis] Variáveis de ambiente do Redis não foram definidas')
     }
     const baseConfig = {
         // captura variáveis de conexão
@@ -16,13 +16,13 @@ function createRedisConnection(customConfig = {}) {
         retryStrategy: (times) => {
             // se falhar +3 vezes seguidas, assume que Redis está offline
             if (times > 3) {
-                console.error('\n>> [Redis] Sua conexão com Redis está inacessível')
+                console.error('\n>> [IORedis] Sua conexão com Redis está inacessível')
                 redis.disconnect() // fecha a conexão
                 return null // IORedis desiste do loop de reconexão
             }
 
             const delay = Math.min(times * 5000, 15000) // loop de reconexão de 5s a 15s
-            console.log(`>> [Redis] Tentando reconectar ${connName}... Tentativa (${times})`)
+            console.log(`>> [IORedis] Tentando reconectar ${connName}... Tentativa (${times})`)
             return delay
         }
     }
@@ -36,30 +36,30 @@ function createRedisConnection(customConfig = {}) {
 
     // centraliza logs de eventos (serve para qualquer conexão criada na factory)
     redis.on('connect', () => {
-        console.log(`>> [Redis] Uma nova conexão foi bem-sucedida: ${connName}`)
+        console.log(`>> [IORedis] Uma nova conexão foi bem-sucedida: ${connName}`)
     })
 
     redis.on('error', (err) => {
         // erros de rede e infraestrutura
         switch (err.code) {
             case 'ECONNREFUSED':
-                console.error(`>> [Redis] Conexão recusada em ${connName}: ${err.code}`)
+                console.error(`>> [IORedis] Conexão recusada em ${connName}: ${err.code}`)
                 return
             case 'ETIMEDOUT':
-                console.error(`>> [Redis] Timeout de conexão em ${connName}: ${err.code}`)
+                console.error(`>> [IORedis] Timeout de conexão em ${connName}: ${err.code}`)
                 return
             case 'ENOTFOUND':
-                console.error(`>> [Redis] DNS/Host não encontrado em ${connName}: ${err.code}`)
+                console.error(`>> [IORedis] DNS/Host não encontrado em ${connName}: ${err.code}`)
                 return
         }
         // erros internos do Redis
         const msg = err.message || ''
         if (msg.includes('OOM')) {
-            console.error(`>> [Redis] Limite de memória excedido em ${connName}`)
+            console.error(`>> [IORedis] Limite de memória excedido em ${connName}`)
         } else if (msg.includes('READONLY')) {
-            console.error(`>> [Redis] Instância somente para leitura em ${connName}`)
+            console.error(`>> [IORedis] Instância somente para leitura em ${connName}`)
         } else {
-            console.error(`>> [Redis] Erro em ${connName}: ${msg}`)
+            console.error(`>> [IORedis] Erro em ${connName}: ${msg}`)
         }
     })
 
