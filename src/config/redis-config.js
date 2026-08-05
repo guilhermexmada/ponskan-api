@@ -1,9 +1,10 @@
 import IORedis from 'ioredis'
+import {getRedisState, setRedisState} from './redisState.js'
 
 // Factory de conexões com Redis
 function createRedisConnection(customConfig = {}) {
     if (!process.env.REDIS_HOST || !process.env.REDIS_PORT) {
-        console.log('[IORedis] Variáveis de ambiente do Redis não foram definidas')
+        console.log('>> [IORedis] Variáveis de ambiente do Redis não foram definidas')
     }
     const baseConfig = {
         // captura variáveis de conexão
@@ -16,7 +17,7 @@ function createRedisConnection(customConfig = {}) {
         retryStrategy: (times) => {
             // se falhar +3 vezes seguidas, assume que Redis está offline
             if (times > 3) {
-                console.error('\n>> [IORedis] Sua conexão com Redis está inacessível')
+                console.error('\n>> [IORedis] Sua conexão com Redis está inacessível\n')
                 redis.disconnect() // fecha a conexão
                 return null // IORedis desiste do loop de reconexão
             }
@@ -36,10 +37,18 @@ function createRedisConnection(customConfig = {}) {
 
     // centraliza logs de eventos (serve para qualquer conexão criada na factory)
     redis.on('connect', () => {
+        setRedisState(true)
         console.log(`>> [IORedis] Uma nova conexão foi bem-sucedida: ${connName}`)
     })
 
+    redis.on('end', () => {
+        setRedisState(false)
+        console.log(`>> [IORedis] Uma conexão foi encerrada: ${connName}`)
+    })
+
     redis.on('error', (err) => {
+        // atualiza estado do redis
+        setRedisState(false)
         // erros de rede e infraestrutura
         switch (err.code) {
             case 'ECONNREFUSED':
@@ -66,8 +75,4 @@ function createRedisConnection(customConfig = {}) {
     return redis
 }
 
-// Cliente Singleton (uso geral na API)
-// const redisClient = createRedisConnection()
-
-export { /*redisClient,*/ createRedisConnection }
-
+export { createRedisConnection }
