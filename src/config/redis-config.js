@@ -1,5 +1,6 @@
 import IORedis from 'ioredis'
 import {getRedisState, setRedisState} from './redisState.js'
+import retryPush from '../utils/syncPendingAnalysis.js'
 
 // Factory de conexões com Redis
 function createRedisConnection(customConfig = {}) {
@@ -38,6 +39,7 @@ function createRedisConnection(customConfig = {}) {
     // centraliza logs de eventos (serve para qualquer conexão criada na factory)
     redis.on('connect', () => {
         setRedisState(true)
+        retryPush()
         console.log(`>> [IORedis] Uma nova conexão foi bem-sucedida: ${connName}`)
     })
 

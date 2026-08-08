@@ -34,7 +34,15 @@ function initImageWorker() {
             // para cada foto
             for (const image of images) {
                 // envia buffer serializado para pré-processamento
+                console.log(image.buffer)
+                // const originalBuffer = Buffer.isBuffer(image.buffer) ? image.buffer : Buffer.from(image.buffer?.data || image.buffer)
+                
+                // ! erro do formato do buffer esperado no worker (tem ou não tem .data ?) !
                 const originalBuffer = Buffer.from(image.buffer.data)
+                if (!originalBuffer || originalBuffer.length === 0) {
+                    console.error(`Buffer da imagem ${image.originalName} está vazio ou inválido.`)
+                }
+
                 const processedBuffer = await preProcess.preProcess(originalBuffer)
 
                 // salva buffers temporariamente
@@ -158,11 +166,11 @@ function initImageWorker() {
 
     // erro de conexão
     imageWorker.on('error', (error) => {
-        if(lastErrorCode != error.code){
+        if (lastErrorCode != error.code) {
             lastErrorCode = error.code
             console.error('>> [BullMQ] Erro de conexão do ImageWorker com Redis: ', error.code)
-        } else if(lastErrorCode == error.code && errorCount >= 10){
-                console.error(`>> [BullMQ] Múltiplos erros de conexão do ImageWorker com Redis: ${error.code} x${errorCount}`)
+        } else if (lastErrorCode == error.code && errorCount >= 10) {
+            console.error(`>> [BullMQ] Múltiplos erros de conexão do ImageWorker com Redis: ${error.code} x${errorCount}`)
         }
         errorCount++
     })

@@ -1,7 +1,8 @@
-import path from 'path'
+import path, { relative } from 'path'
 import fs from 'fs/promises' // importa módulo assíncrono do pacote
 import { v4 as uuidv4 } from 'uuid'
 import AppError from '../appError.js'
+import { isArray } from 'util'
 
 class StorageService {
     async save(buffer, folder, ext) {
@@ -57,6 +58,30 @@ class StorageService {
             recursive: true,
             force: true
         })
+    }
+    async savePayload(object, folder) {
+        // define caminho absoluto de destino
+        const fullPath = path.resolve('storage', 'temp', folder, 'payload.json')
+
+        // cria pasta de destino
+        await fs.mkdir(path.dirname(fullPath), { recursive: true })
+
+        // cria json 
+        await fs.writeFile(fullPath, JSON.stringify(object, null, 2), 'utf-8')
+    }
+    async readFile(relativePath) {
+        try {
+            // se for array com pedaços do caminho ao invés de string única
+            if (Array.isArray(relativePath)) {
+                relativePath = path.join(...relativePath) // spread transforma array em elementos individuais
+            }
+            const fullPath = path.resolve(relativePath)
+            const file = await fs.readFile(fullPath, 'utf-8')
+            return file
+        } catch (error) {
+            // ! precisa criar resposta limpa para análise perdida !
+            console.error('>> [Storage] Não foi possível acessar esse arquivo: ', /*error*/)
+        }
     }
 }
 
