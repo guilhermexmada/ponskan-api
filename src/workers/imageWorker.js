@@ -33,16 +33,14 @@ function initImageWorker() {
 
             // para cada foto
             for (const image of images) {
-                // envia buffer serializado para pré-processamento
-                console.log(image.buffer)
-                // const originalBuffer = Buffer.isBuffer(image.buffer) ? image.buffer : Buffer.from(image.buffer?.data || image.buffer)
-                
-                // ! erro do formato do buffer esperado no worker (tem ou não tem .data ?) !
-                const originalBuffer = Buffer.from(image.buffer.data)
+                // converte buffer serializado para buffer puro
+                const originalBuffer = Buffer.isBuffer(image.buffer) ? image.buffer : Buffer.from(image.buffer.data || image.buffer)
+
                 if (!originalBuffer || originalBuffer.length === 0) {
-                    console.error(`Buffer da imagem ${image.originalName} está vazio ou inválido.`)
+                    console.error(`>> [BullMQ] Buffer da imagem ${image.originalName} está vazio ou inválido.`)
                 }
 
+                // passa buffer por pipeline de pré-processamento
                 const processedBuffer = await preProcess.preProcess(originalBuffer)
 
                 // salva buffers temporariamente
@@ -51,6 +49,7 @@ function initImageWorker() {
                     `${analysisId}`,
                     '.webp'
                 )
+
                 const tempOriginalPath = await storageService.save(
                     originalBuffer,
                     `${analysisId}`,
@@ -85,6 +84,8 @@ function initImageWorker() {
             // aguarda inferência na CNN
             const inference = await services.cnnService.simulate(analysisId, analysisObject)
             console.log(`>> [BullMQ] Análise ${analysisId} classificada com sucesso`)
+
+            console.log('<<< 07 >>>')
 
             // finaliza contador da CNN
             const endCNN = performance.now()
