@@ -39,7 +39,6 @@ function createRedisConnection(customConfig = {}) {
     // centraliza logs de eventos (serve para qualquer conexão criada na factory)
     redis.on('connect', () => {
         setRedisState(true)
-        retryPush()
         console.log(`>> [IORedis] Uma nova conexão foi bem-sucedida: ${connName}`)
     })
 
@@ -76,5 +75,14 @@ function createRedisConnection(customConfig = {}) {
 
     return redis
 }
+
+const mainClient = createRedisConnection({
+    connectionName: 'mainClient'
+})
+
+// tenta processar jobs pendentes APENAS quando cliente principal conectar
+mainClient.on('connect', () => {
+    retryPush()
+})
 
 export { createRedisConnection }
