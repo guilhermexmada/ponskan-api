@@ -29,8 +29,6 @@ function initImageWorker() {
             const { analysisId, userId, images } = job.data
             let analysisObject = []
 
-            console.log(`>> [BullMQ] Processando Análise ${analysisId} ... Tentativa ${job.attemptsMade + 1}`)
-
             // para cada foto
             for (const image of images) {
                 // converte buffer serializado para buffer puro
@@ -85,8 +83,6 @@ function initImageWorker() {
             const inference = await services.cnnService.simulate(analysisId, analysisObject)
             console.log(`>> [BullMQ] Análise ${analysisId} classificada com sucesso`)
 
-            console.log('<<< 07 >>>')
-
             // finaliza contador da CNN
             const endCNN = performance.now()
 
@@ -138,6 +134,7 @@ function initImageWorker() {
         }
     }, { connection: workerConnection })
 
+    // job finalizou
     imageWorker.on('completed', async (job) => {
         try {
             const { analysisId } = job.data
@@ -150,6 +147,19 @@ function initImageWorker() {
         }
     })
 
+    // job iniciou
+    imageWorker.on('active', async (job) => {
+        try {
+            const { analysisId } = job.data
+            const initializedAnalysis = await services.analysisService.update(analysisId, {
+                status: 'classificando'
+            })
+            console.log(`>> [BullMQ] Classificando Análise ${analysisId} ... Tentativa ${job.attemptsMade + 1}`)
+        } catch (error) {
+            console.error(`>> [BullMQ] Erro ao atualizar progresso da análise ${analysisId}: ${error}`)
+        }
+    })
+
     // job falhou
     imageWorker.on('failed', async (job, err) => {
         try {
@@ -159,7 +169,7 @@ function initImageWorker() {
                 status: 'cancelada'
             })
         } catch (error) {
-            console.error('>> [BullMQ] Erro ao atualizar progresso da análise: ', error)
+            console.error(`>> [BullMQ] Erro ao atualizar progresso da análise ${analysisId}: ${error}`)
         } finally {
             console.error(`>> [BullMQ] Job ${job.id} falhou: ${err.message}`)
         }
