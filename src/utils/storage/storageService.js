@@ -28,9 +28,9 @@ class StorageService {
     async move(fullPath, folder, analysisId, userId) {
         try {
             // consulta data de criação do arquivo
-            const dt = new Date()
-            const month = dt.getMonth() + 1
-            const year = dt.getFullYear()
+            // const dt = new Date()
+            // const month = dt.getMonth() + 1
+            // const year = dt.getFullYear()
             // define caminho de destino
             const parsedPath = path.parse(fullPath)
             // caminho relativo dentro do storage
@@ -38,10 +38,10 @@ class StorageService {
                 'storage',
                 `${folder}`,
                 'analysis',
-                `${year}`,
-                `${month}`,
-                `${analysisId}`,
+                // `${year}`,
+                // `${month}`,
                 `${userId}`,
+                `${analysisId}`,
                 parsedPath.base
             )
             // caminho absoluto final
